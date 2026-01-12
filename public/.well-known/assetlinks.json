@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.oura_qfi.twa",
+      "sha256_cert_fingerprints": [
+        "49:BA:9E:64:53:47:3C:92:87:89:25:3F:6C:44:01:D1:A3:C4:60:2C:CA:98:77:60:96:39:6C:1E:5D:7E:76:60"
+      ]
+    }
+  }
+]
+
