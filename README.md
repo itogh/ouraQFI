@@ -185,3 +185,4 @@ UI仕様書は [UI_SPECIFICATION.md](./UI_SPECIFICATION.md) を参照してく�
 ---
 
 **Made with ❤️ for all oshikatsu enthusiasts**
+南無阿弥陀仏
