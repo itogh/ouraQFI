@@ -9,7 +9,6 @@ import { QfiChart } from "@/components/QfiChart";
 import { InputForm } from "@/components/InputForm";
 import { DataTable } from "@/components/DataTable";
 import { SettingsDialog } from "@/components/SettingsDialog";
-import { AutoDataGenerator } from "@/components/AutoDataGenerator";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DailyStats } from "@/lib/types";
@@ -93,8 +92,8 @@ export default function Home() {
           </Card>
         </section>
 
-        {/* 入力フォームと自動生成 */}
-        <section className="grid gap-6 md:grid-cols-2">
+        {/* 入力フォーム */}
+        <section className="grid gap-6">
           <Card className="transition-shadow hover:shadow-md">
             <CardHeader>
               <CardTitle>データ入力</CardTitle>
@@ -115,7 +114,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <AutoDataGenerator />
+          {/* AutoDataGenerator（展示用データ生成）は削除されました */}
         </section>
 
         {/* データテーブル */}
