@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { DailyStats } from "@/lib/types";
 import { useState } from "react";
+import { fetchOuraDailyFromServer } from "@/lib/ouraApi";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,33 @@ export default function Home() {
 
   const handleLoadSample = () => {
     addDaily(sampleData);
+  };
+
+  const [isFetchingOura, setIsFetchingOura] = useState(false);
+  const [ouraError, setOuraError] = useState<string | null>(null);
+
+  const handleFetchOura = async () => {
+    setOuraError(null);
+    setIsFetchingOura(true);
+    try {
+      // fetch last 7 days by default
+      const today = new Date();
+      const end = today.toISOString().slice(0, 10);
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - 6);
+      const start = startDate.toISOString().slice(0, 10);
+
+      const data: DailyStats[] = await fetchOuraDailyFromServer(start, end);
+      if (data.length === 0) {
+        setOuraError("Oura: 取得データがありませんでした");
+      } else {
+        addDaily(data);
+      }
+    } catch (err: any) {
+      setOuraError(err?.message ?? String(err));
+    } finally {
+      setIsFetchingOura(false);
+    }
   };
 
   const handleReset = () => {
@@ -110,7 +138,13 @@ export default function Home() {
                 <Button variant="secondary" onClick={handleLoadSample}>
                   サンプルデータを読み込む
                 </Button>
+
+                <Button variant="secondary" onClick={handleFetchOura} disabled={isFetchingOura}>
+                  {isFetchingOura ? "取得中..." : "Ouraから取得"}
+                </Button>
               </div>
+
+              {ouraError && <p className="text-sm text-destructive">{ouraError}</p>}
             </CardContent>
           </Card>
 
