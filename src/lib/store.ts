@@ -192,3 +192,51 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().recompute();
   },
 }));
+
+// Persist to localStorage in the browser so data survives reloads.
+if (typeof window !== "undefined") {
+  const STORAGE_KEY = "ouraQFI:store";
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      let parsed: any = null;
+      try {
+        parsed = JSON.parse(raw);
+      } catch (e) {
+        // corrupted store — ignore and overwrite on next change
+        parsed = null;
+      }
+      if (parsed) {
+        // Only restore known keys
+        const { daily, norm, weights, decay, ranks } = parsed;
+        useAppStore.setState({
+          ...(norm ? { norm } : {}),
+          ...(weights ? { weights } : {}),
+          ...(decay ? { decay } : {}),
+          ...(ranks ? { ranks } : {}),
+          ...(daily ? { daily } : {}),
+        });
+        // Recompute derived values after hydration
+        useAppStore.getState().recompute();
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // Subscribe and save on changes (debounce not necessary for small state)
+  useAppStore.subscribe((s) => {
+    try {
+      const toSave = {
+        daily: s.daily,
+        norm: s.norm,
+        weights: s.weights,
+        decay: s.decay,
+        ranks: s.ranks,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    } catch (e) {
+      // ignore
+    }
+  });
+}
