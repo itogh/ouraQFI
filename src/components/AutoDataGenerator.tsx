@@ -8,7 +8,6 @@ import { Play, Pause, RotateCcw } from "lucide-react";
 
 export function AutoDataGenerator() {
   const [isRunning, setIsRunning] = useState(false);
-  const [nextUpdate, setNextUpdate] = useState<number | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const { addDaily } = useAppStore();
@@ -34,7 +33,6 @@ export function AutoDataGenerator() {
     if (isRunning) return;
 
     setIsRunning(true);
-    setNextUpdate(30); // 30秒
 
     // 最初のデータをすぐに追加
     const data = generateRandomData();
@@ -44,18 +42,16 @@ export function AutoDataGenerator() {
     intervalRef.current = setInterval(() => {
       const data = generateRandomData();
       addDaily(data);
-      setNextUpdate(30); // リセット
     }, 30000); // 30秒 = 30,000ミリ秒
 
     // カウントダウン用のタイマー（1秒ごと）
     countdownRef.current = setInterval(() => {
-      setNextUpdate((prev) => (prev !== null && prev > 0 ? prev - 1 : 30));
+      // カウントダウンは表示しないので空のまま
     }, 1000);
   };
 
   const stopAutoGeneration = () => {
     setIsRunning(false);
-    setNextUpdate(null);
 
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -79,13 +75,6 @@ export function AutoDataGenerator() {
       stopAutoGeneration();
     };
   }, []);
-
-  // 秒を分:秒形式に変換
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
 
   return (
     <Card className="transition-shadow hover:shadow-md">

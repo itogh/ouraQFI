@@ -23,7 +23,7 @@ import {
 
 
 export default function Home() {
-  const { eds, qfi, daily, latestRank, addDaily, reset } = useAppStore();
+  const { eds, qfi, daily, latestRank, reset } = useAppStore();
   const [showResetDialog, setShowResetDialog] = useState(false);
 
   const handleReset = () => {

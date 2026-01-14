@@ -33,7 +33,7 @@ export function SettingsDialog() {
       setTimeout(() => apiInputRef.current?.focus(), 100);
     };
     // listen for custom event dispatched by Oura button
-    const onOpen = (e: Event) => handler();
+    const onOpen = () => handler();
     window.addEventListener("open-settings-api", onOpen as EventListener);
     return () => window.removeEventListener("open-settings-api", onOpen as EventListener);
   }, []);

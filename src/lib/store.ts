@@ -12,7 +12,7 @@ function stopDebugInterval() {
   }
 }
 
-function startDebugInterval(get: any, set: any) {
+function startDebugInterval(get: () => AppState) {
   stopDebugInterval();
   // every 3 minutes
   __debugInterval = setInterval(() => {
@@ -49,7 +49,7 @@ function startDebugInterval(get: any, set: any) {
 
       // add
       state.addDaily(rec);
-    } catch (e) {
+    } catch {
       // ignore
     }
   }, 3 * 60 * 1000);
@@ -119,7 +119,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     // Ensure each record has a capturedAt timestamp
     const withTs = arr.map((r) => ({
       ...r,
-      capturedAt: (r as any).capturedAt ?? new Date().toISOString(),
+      capturedAt: (r as DailyStats & { capturedAt?: string }).capturedAt ?? new Date().toISOString(),
     }));
     set((s) => ({ daily: [...s.daily, ...withTs] }));
     get().recompute();
@@ -130,7 +130,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (get().debugMode) return;
     set({ debugMode: true });
     // start interval
-    startDebugInterval(get, set);
+    startDebugInterval(get);
   },
 
   disableDebug: () => {
@@ -170,7 +170,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       };
 
       state.addDaily(rec);
-    } catch (e) {
+    } catch {
       // ignore
     }
   },
@@ -199,16 +199,23 @@ if (typeof window !== "undefined") {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      let parsed: any = null;
+      let parsed: unknown = null;
       try {
         parsed = JSON.parse(raw);
-      } catch (e) {
+      } catch {
         // corrupted store — ignore and overwrite on next change
         parsed = null;
       }
-      if (parsed) {
+      if (parsed && typeof parsed === "object") {
         // Only restore known keys
-        const { daily, norm, weights, decay, ranks } = parsed;
+        const data = parsed as Partial<{
+          daily: DailyStats[];
+          norm: NormalizationParams;
+          weights: WeightParams;
+          decay: DecayParams;
+          ranks: RankBreakpoints;
+        }>;
+        const { daily, norm, weights, decay, ranks } = data;
         useAppStore.setState({
           ...(norm ? { norm } : {}),
           ...(weights ? { weights } : {}),
@@ -220,7 +227,7 @@ if (typeof window !== "undefined") {
         useAppStore.getState().recompute();
       }
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 
@@ -235,7 +242,7 @@ if (typeof window !== "undefined") {
         ranks: s.ranks,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-    } catch (e) {
+    } catch {
       // ignore
     }
   });

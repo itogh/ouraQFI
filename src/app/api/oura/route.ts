@@ -41,22 +41,24 @@ export async function GET(req: Request) {
       attempts.push({ url: ouraUrl, status: resp.status, body: text });
 
       if (resp.ok) {
-        let json: any;
+        let json: unknown;
         try {
           json = JSON.parse(text);
         } catch (parseErr) {
           return NextResponse.json({ error: "Failed to parse Oura response as JSON", details: String(parseErr) }, { status: 502 });
         }
 
-        const rawItems: any[] = json.activity_summaries || json.items || json.summaries || json || [];
+        const jsonObj = json as Record<string, unknown>;
+        const rawItems: unknown[] = (jsonObj.activity_summaries || jsonObj.items || jsonObj.summaries || json || []) as unknown[];
 
-        const mapped: DailyStats[] = (Array.isArray(rawItems) ? rawItems : []).map((it: any) => {
-          const date = it.summary_date || it.date || it.day || it.summaryDate || it.calendar_date || "";
+        const mapped: DailyStats[] = (Array.isArray(rawItems) ? rawItems : []).map((it: unknown) => {
+          const item = it as Record<string, unknown>;
+          const date = (item.summary_date || item.date || item.day || item.summaryDate || item.calendar_date || "") as string;
 
-          const very = it.very_active_minutes ?? it.veryActiveMinutes ?? 0;
-          const moderate = it.moderately_active_minutes ?? it.moderatelyActiveMinutes ?? 0;
-          const light = it.lightly_active_minutes ?? it.lightlyActiveMinutes ?? 0;
-          const active = it.active_minutes ?? it.activeMinutes ?? 0;
+          const very = (item.very_active_minutes ?? item.veryActiveMinutes ?? 0) as number;
+          const moderate = (item.moderately_active_minutes ?? item.moderatelyActiveMinutes ?? 0) as number;
+          const light = (item.lightly_active_minutes ?? item.lightlyActiveMinutes ?? 0) as number;
+          const active = (item.active_minutes ?? item.activeMinutes ?? 0) as number;
 
           const timeMinutes = (very || moderate || light) ? (very + moderate + light) : (active || 0);
 
@@ -70,8 +72,9 @@ export async function GET(req: Request) {
 
         return NextResponse.json({ data: mapped, tried: attempts });
       }
-    } catch (err: any) {
-      attempts.push({ url: ouraUrl, status: 0, body: String(err?.message ?? err) });
+    } catch (err: unknown) {
+      const error = err as Error | undefined;
+      attempts.push({ url: ouraUrl, status: 0, body: String(error?.message ?? err) });
     }
   }
 
