@@ -11,9 +11,7 @@ import { DataTable } from "@/components/DataTable";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DailyStats } from "@/lib/types";
 import { useState } from "react";
-import { fetchOuraDailyFromServer } from "@/lib/ouraApi";
 import {
   Dialog,
   DialogContent,
@@ -23,49 +21,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const sampleData: DailyStats[] = [
-  { date: "2025-10-21", timeMinutes: 60, moneyJpy: 0, emotionZ: 0 },
-  { date: "2025-10-22", timeMinutes: 90, moneyJpy: 0, emotionZ: 0 },
-  { date: "2025-10-23", timeMinutes: 45, moneyJpy: 0, emotionZ: 0 },
-  { date: "2025-10-24", timeMinutes: 120, moneyJpy: 0, emotionZ: 0 },
-  { date: "2025-10-25", timeMinutes: 75, moneyJpy: 0, emotionZ: 0 },
-  { date: "2025-10-26", timeMinutes: 60, moneyJpy: 0, emotionZ: 0 },
-  { date: "2025-10-27", timeMinutes: 100, moneyJpy: 0, emotionZ: 0 },
-];
 
 export default function Home() {
   const { eds, qfi, daily, latestRank, addDaily, reset } = useAppStore();
   const [showResetDialog, setShowResetDialog] = useState(false);
 
-  const handleLoadSample = () => {
-    addDaily(sampleData);
-  };
-
-  const [isFetchingOura, setIsFetchingOura] = useState(false);
+  // デモ用: Oura 実取得は無効化しています。ボタンは見た目のみ残す。
   const [ouraError, setOuraError] = useState<string | null>(null);
 
   const handleFetchOura = async () => {
-    setOuraError(null);
-    setIsFetchingOura(true);
-    try {
-      // fetch last 7 days by default
-      const today = new Date();
-      const end = today.toISOString().slice(0, 10);
-      const startDate = new Date(today);
-      startDate.setDate(today.getDate() - 6);
-      const start = startDate.toISOString().slice(0, 10);
-
-      const data: DailyStats[] = await fetchOuraDailyFromServer(start, end);
-      if (data.length === 0) {
-        setOuraError("Oura: 取得データがありませんでした");
-      } else {
-        addDaily(data);
-      }
-    } catch (err: any) {
-      setOuraError(err?.message ?? String(err));
-    } finally {
-      setIsFetchingOura(false);
-    }
+    // ノーオペレーション（デモ用）
+    setOuraError("デモモード: Oura からの自動取得は無効です");
+    setTimeout(() => setOuraError(null), 3000);
   };
 
   const handleReset = () => {
@@ -126,8 +93,8 @@ export default function Home() {
             <CardHeader>
               <CardTitle>データ入力</CardTitle>
               <CardDescription>
-                活動の時間を記録してください
-              </CardDescription>
+                  活動を記録してください（時間入力はデモで非表示）
+                </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <InputForm
@@ -135,12 +102,8 @@ export default function Home() {
                 onReset={() => setShowResetDialog(true)}
               />
               <div className="flex gap-2 pt-2 border-t">
-                <Button variant="secondary" onClick={handleLoadSample}>
-                  サンプルデータを読み込む
-                </Button>
-
-                <Button variant="secondary" onClick={handleFetchOura} disabled={isFetchingOura}>
-                  {isFetchingOura ? "取得中..." : "Ouraから取得"}
+                <Button variant="secondary" onClick={handleFetchOura}>
+                  Ouraから取得
                 </Button>
               </div>
 
@@ -170,11 +133,8 @@ export default function Home() {
             <CardContent className="py-12">
               <div className="text-center space-y-4">
                 <p className="text-muted-foreground">
-                  データがありません。上のフォームからデータを追加するか、サンプルデータを読み込んでください。
+                  データがありません。上のフォームからデータを追加してください。
                 </p>
-                <Button variant="outline" onClick={handleLoadSample}>
-                  サンプルデータを読み込む
-                </Button>
               </div>
             </CardContent>
           </Card>

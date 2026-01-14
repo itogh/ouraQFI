@@ -13,18 +13,14 @@ interface InputFormProps {
 }
 
 export function InputForm({ onSubmit, onReset, defaultValues }: InputFormProps) {
-  const [timeMinutes, setTimeMinutes] = useState(defaultValues?.timeMinutes ?? 60);
+  // 時間入力を表示しないため、timeMinutes は常に 0 に固定する（デモ用）
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     const newErrors: Record<string, string> = {};
-    
-    // バリデーション
-    if (timeMinutes < 0) {
-      newErrors.timeMinutes = "時間は0以上である必要があります";
-    }
+    // 今回は時間入力を受け付けないためバリデーション不要
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -33,48 +29,25 @@ export function InputForm({ onSubmit, onReset, defaultValues }: InputFormProps) 
     
     setErrors({});
     
-    // 日付は今日の日付を使用
+    // 日付は今日の日付を使用。timeMinutes はデモ用に 0 固定
     const today = new Date().toISOString().split("T")[0];
-    
+
     onSubmit({
       date: today,
-      timeMinutes,
-      moneyJpy: 0, // 金額は常に0に固定
-      emotionZ: 0, // 感情Zは常に0に固定
+      timeMinutes: 0,
+      moneyJpy: 0,
+      emotionZ: 0,
     });
   };
 
   const handleResetClick = () => {
-    setTimeMinutes(60);
+    setErrors({});
     setErrors({});
     onReset?.();
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="timeMinutes">時間（分）</Label>
-        <Input
-          id="timeMinutes"
-          type="number"
-          min="0"
-          value={timeMinutes}
-          onChange={(e) => {
-            setTimeMinutes(Number(e.target.value));
-            if (errors.timeMinutes) {
-              setErrors((prev) => {
-                const next = { ...prev };
-                delete next.timeMinutes;
-                return next;
-              });
-            }
-          }}
-        />
-        {errors.timeMinutes && (
-          <p className="text-sm text-destructive">{errors.timeMinutes}</p>
-        )}
-      </div>
-
       <div className="flex gap-2">
         <Button type="submit">追加</Button>
         <Button type="button" variant="outline" onClick={handleResetClick}>
