@@ -53,7 +53,7 @@ export function DataTable({ data, eds, qfi }: DataTableProps) {
         <TableHeader>
           <TableRow>
             <TableHead>日付</TableHead>
-            <TableHead className="text-right">時間（分）</TableHead>
+            <TableHead className="text-right">採取時刻</TableHead>
             <TableHead className="text-right">Ed</TableHead>
             <TableHead className="text-right">QFI</TableHead>
           </TableRow>
@@ -62,9 +62,11 @@ export function DataTable({ data, eds, qfi }: DataTableProps) {
           {currentData.map((row, idx) => (
             <TableRow key={`${row.date}-${idx}`}>
               <TableCell className="font-medium">{row.date}</TableCell>
-              <TableCell className="text-right">{row.timeMinutes}</TableCell>
-              <TableCell className="text-right">{row.ed.toFixed(2)}</TableCell>
-              <TableCell className="text-right">{row.qfi.toFixed(2)}</TableCell>
+                <TableCell className="text-right">
+                  {row.capturedAt ? new Date(row.capturedAt).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }) : `${row.timeMinutes} 分`}
+                </TableCell>
+                <TableCell className="text-right">{row.ed.toFixed(2)}</TableCell>
+                <TableCell className="text-right">{row.qfi.toFixed(2)}</TableCell>
             </TableRow>
           ))}
         </TableBody>

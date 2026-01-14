@@ -41,23 +41,21 @@ export function QfiChart({ data }: QfiChartProps) {
     <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-          <XAxis 
-            dataKey="date" 
-            tick={{ fontSize: 12 }}
-            className="text-muted-foreground"
+          <CartesianGrid strokeDasharray="3 3" stroke={`hsl(var(--border) / 0.6)`} />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
           />
-          <YAxis 
-            tick={{ fontSize: 12 }}
-            className="text-muted-foreground"
+          <YAxis
+            tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
-          <Line 
-            type="monotone" 
-            dataKey="qfi" 
-            stroke="#10b981" 
-            strokeWidth={2} 
+          <Line
+            type="monotone"
+            dataKey="qfi"
+            stroke={`hsl(var(--primary))`}
+            strokeWidth={2}
             dot={false}
             name="QFI"
           />

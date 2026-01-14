@@ -28,8 +28,9 @@ export function QfiScoreDisplay() {
     : null;
   const prevDisplayScore = prevNormalizedScore !== null ? Math.round(prevNormalizedScore) : null;
   
-  // 変化量を計算
-  const scoreDelta = prevDisplayScore !== null ? displayScore - prevDisplayScore : null;
+  // 変化量を計算（表示は ±5 にクランプ）
+  const rawScoreDelta = prevDisplayScore !== null ? displayScore - prevDisplayScore : null;
+  const scoreDelta = rawScoreDelta !== null ? Math.max(-5, Math.min(5, rawScoreDelta)) : null;
   
   // スコアが更新されたらアニメーション用の前回値を更新
   useEffect(() => {

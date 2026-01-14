@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import {
   Dialog,
@@ -19,48 +19,40 @@ import { Settings } from "lucide-react";
 export function SettingsDialog() {
   const { norm, weights, decay, ranks, setParams } = useAppStore();
   const [isOpen, setIsOpen] = useState(false);
+  const debugMode = useAppStore((s) => s.debugMode);
+  const enableDebug = useAppStore((s) => s.enableDebug);
 
-  // ローカルステート
-  const [muTime, setMuTime] = useState(norm.muTime);
-  const [sigmaTime, setSigmaTime] = useState(norm.sigmaTime);
-  const [muMoney, setMuMoney] = useState(norm.muMoney);
-  const [sigmaMoney, setSigmaMoney] = useState(norm.sigmaMoney);
+  // API input for special commands (e.g. typing 'debug' and saving will enable debug mode)
+  const [apiInput, setApiInput] = useState("");
+  const apiInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [alpha, setAlpha] = useState(weights.alpha);
-  const [beta, setBeta] = useState(weights.beta);
-  const [gamma, setGamma] = useState(weights.gamma);
+  useEffect(() => {
+    const handler = () => {
+      setIsOpen(true);
+      // focus input after open
+      setTimeout(() => apiInputRef.current?.focus(), 100);
+    };
+    // listen for custom event dispatched by Oura button
+    const onOpen = (e: Event) => handler();
+    window.addEventListener("open-settings-api", onOpen as EventListener);
+    return () => window.removeEventListener("open-settings-api", onOpen as EventListener);
+  }, []);
 
-  const [halfLifeDays, setHalfLifeDays] = useState(decay.halfLifeDays);
-
-  const [rankA, setRankA] = useState(ranks.A);
-  const [rankB, setRankB] = useState(ranks.B);
-  const [rankC, setRankC] = useState(ranks.C);
-  const [rankD, setRankD] = useState(ranks.D);
+  // パラメータの詳細編集 UI は削除済みです。
+  // 保存時には現在のストア値をそのまま `setParams` に渡します。
 
   const handleSave = () => {
-    setParams({
-      norm: { muTime, sigmaTime, muMoney, sigmaMoney },
-      weights: { alpha, beta, gamma },
-      decay: { halfLifeDays },
-      ranks: { A: rankA, B: rankB, C: rankC, D: rankD },
-    });
+    // If apiInput contains the special 'debug' command, enable debug mode
+    if (apiInput.trim().toLowerCase() === "debug") {
+      enableDebug();
+    }
+    // パラメータ編集 UI を削除したため、現在のストアの値をそのまま再設定します。
+    setParams({ norm, weights, decay, ranks });
     setIsOpen(false);
   };
 
   const handleCancel = () => {
-    // 元の値に戻す
-    setMuTime(norm.muTime);
-    setSigmaTime(norm.sigmaTime);
-    setMuMoney(norm.muMoney);
-    setSigmaMoney(norm.sigmaMoney);
-    setAlpha(weights.alpha);
-    setBeta(weights.beta);
-    setGamma(weights.gamma);
-    setHalfLifeDays(decay.halfLifeDays);
-    setRankA(ranks.A);
-    setRankB(ranks.B);
-    setRankC(ranks.C);
-    setRankD(ranks.D);
+    // 編集 UI を削除したため、単にダイアログを閉じます。
     setIsOpen(false);
   };
 
@@ -77,154 +69,26 @@ export function SettingsDialog() {
           <DialogDescription>
             QFIの計算パラメータを調整できます。変更後は自動的に再計算されます。
           </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6 py-4">
-          {/* 正規化パラメータ */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-sm">正規化パラメータ</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="muTime">μ 時間（分）</Label>
-                <Input
-                  id="muTime"
-                  type="number"
-                  value={muTime}
-                  onChange={(e) => setMuTime(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sigmaTime">σ 時間（分）</Label>
-                <Input
-                  id="sigmaTime"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={sigmaTime}
-                  onChange={(e) => setSigmaTime(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="muMoney">μ 金額（JPY）</Label>
-                <Input
-                  id="muMoney"
-                  type="number"
-                  value={muMoney}
-                  onChange={(e) => setMuMoney(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sigmaMoney">σ 金額（JPY）</Label>
-                <Input
-                  id="sigmaMoney"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={sigmaMoney}
-                  onChange={(e) => setSigmaMoney(Number(e.target.value))}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 重みパラメータ */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-sm">重みパラメータ</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="alpha">α（時間）</Label>
-                <Input
-                  id="alpha"
-                  type="number"
-                  step="0.1"
-                  value={alpha}
-                  onChange={(e) => setAlpha(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="beta">β（金額）</Label>
-                <Input
-                  id="beta"
-                  type="number"
-                  step="0.1"
-                  value={beta}
-                  onChange={(e) => setBeta(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="gamma">γ（感情）</Label>
-                <Input
-                  id="gamma"
-                  type="number"
-                  step="0.1"
-                  value={gamma}
-                  onChange={(e) => setGamma(Number(e.target.value))}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 減衰パラメータ */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-sm">減衰パラメータ</h3>
-            <div className="space-y-2">
-              <Label htmlFor="halfLifeDays">半減期（日）</Label>
+          {debugMode && (
+            <p className="text-sm text-destructive">デバッグモードが有効です</p>
+          )}
+            <div className="pt-2">
+            <h4 className="font-medium text-sm">API 入力</h4>
+            <div className="space-y-2 mt-2">
+              <Label htmlFor="apiInput">API 入力</Label>
               <Input
-                id="halfLifeDays"
-                type="number"
-                min="1"
-                value={halfLifeDays}
-                onChange={(e) => setHalfLifeDays(Number(e.target.value))}
+                id="apiInput"
+                ref={apiInputRef}
+                value={apiInput}
+                onChange={(e) => setApiInput(e.target.value)}
+                placeholder=""
               />
             </div>
           </div>
+        </DialogHeader>
 
-          {/* ランク閾値 */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-sm">ランク閾値</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="rankA">A ランク</Label>
-                <Input
-                  id="rankA"
-                  type="number"
-                  step="0.1"
-                  value={rankA}
-                  onChange={(e) => setRankA(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rankB">B ランク</Label>
-                <Input
-                  id="rankB"
-                  type="number"
-                  step="0.1"
-                  value={rankB}
-                  onChange={(e) => setRankB(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rankC">C ランク</Label>
-                <Input
-                  id="rankC"
-                  type="number"
-                  step="0.1"
-                  value={rankC}
-                  onChange={(e) => setRankC(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rankD">D ランク</Label>
-                <Input
-                  id="rankD"
-                  type="number"
-                  step="0.1"
-                  value={rankD}
-                  onChange={(e) => setRankD(Number(e.target.value))}
-                />
-              </div>
-            </div>
-          </div>
+        <div className="space-y-6 py-4">
+          {/* パラメータ編集 UI は削除されています。必要な場合はストア側で調整してください。 */}
         </div>
 
         <DialogFooter>

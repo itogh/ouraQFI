@@ -10,6 +10,7 @@ export type DailyStats = {
   timeMinutes: number;
   moneyJpy: number;
   emotionZ: number;
+  capturedAt?: string; // ISO timestamp when this record was captured
 };
 
 export type NormalizationParams = {
