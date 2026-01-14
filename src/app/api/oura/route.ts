@@ -41,22 +41,28 @@ export async function GET(req: Request) {
       attempts.push({ url: ouraUrl, status: resp.status, body: text });
 
       if (resp.ok) {
-        let json: any;
+        let json: unknown;
         try {
-          json = JSON.parse(text);
+          json = JSON.parse(text) as unknown;
         } catch (parseErr) {
           return NextResponse.json({ error: "Failed to parse Oura response as JSON", details: String(parseErr) }, { status: 502 });
         }
 
-        const rawItems: any[] = json.activity_summaries || json.items || json.summaries || json || [];
+        // attempt to find array of items in known locations
+        const candidate = (json && typeof json === "object") ? (json as Record<string, unknown>) : {};
+        const rawItems = (Array.isArray((candidate.activity_summaries ?? candidate.items ?? candidate.summaries) as unknown) ? (candidate.activity_summaries ?? candidate.items ?? candidate.summaries) : (Array.isArray(json) ? json : [])) as unknown[];
 
-        const mapped: DailyStats[] = (Array.isArray(rawItems) ? rawItems : []).map((it: any) => {
-          const date = it.summary_date || it.date || it.day || it.summaryDate || it.calendar_date || "";
+        const mapped: DailyStats[] = (Array.isArray(rawItems) ? rawItems : []).map((it) => {
+          const item = (it && typeof it === "object") ? (it as Record<string, unknown>) : {};
 
-          const very = it.very_active_minutes ?? it.veryActiveMinutes ?? 0;
-          const moderate = it.moderately_active_minutes ?? it.moderatelyActiveMinutes ?? 0;
-          const light = it.lightly_active_minutes ?? it.lightlyActiveMinutes ?? 0;
-          const active = it.active_minutes ?? it.activeMinutes ?? 0;
+          const date = String(item.summary_date ?? item.date ?? item.day ?? item.summaryDate ?? item.calendar_date ?? "");
+
+          const toNum = (v: unknown) => (typeof v === "number" ? v : (typeof v === "string" && v.trim() !== "" ? Number(v) : 0));
+
+          const very = toNum(item.very_active_minutes ?? item.veryActiveMinutes);
+          const moderate = toNum(item.moderately_active_minutes ?? item.moderatelyActiveMinutes);
+          const light = toNum(item.lightly_active_minutes ?? item.lightlyActiveMinutes);
+          const active = toNum(item.active_minutes ?? item.activeMinutes);
 
           const timeMinutes = (very || moderate || light) ? (very + moderate + light) : (active || 0);
 
@@ -70,8 +76,9 @@ export async function GET(req: Request) {
 
         return NextResponse.json({ data: mapped, tried: attempts });
       }
-    } catch (err: any) {
-      attempts.push({ url: ouraUrl, status: 0, body: String(err?.message ?? err) });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      attempts.push({ url: ouraUrl, status: 0, body: msg });
     }
   }
 

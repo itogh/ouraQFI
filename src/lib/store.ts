@@ -12,7 +12,7 @@ function stopDebugInterval() {
   }
 }
 
-function startDebugInterval(get: any, set: any) {
+function startDebugInterval(get: () => AppState, set: (patch: Partial<AppState>) => void) {
   stopDebugInterval();
   // every 3 minutes
   __debugInterval = setInterval(() => {
@@ -119,7 +119,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     // Ensure each record has a capturedAt timestamp
     const withTs = arr.map((r) => ({
       ...r,
-      capturedAt: (r as any).capturedAt ?? new Date().toISOString(),
+      capturedAt: (r as DailyStats).capturedAt ?? new Date().toISOString(),
     }));
     set((s) => ({ daily: [...s.daily, ...withTs] }));
     get().recompute();
@@ -199,16 +199,24 @@ if (typeof window !== "undefined") {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      let parsed: any = null;
+      let parsed: unknown = null;
       try {
-        parsed = JSON.parse(raw);
+        parsed = JSON.parse(raw) as unknown;
       } catch (e) {
         // corrupted store — ignore and overwrite on next change
         parsed = null;
       }
-      if (parsed) {
+      if (parsed && typeof parsed === "object") {
         // Only restore known keys
-        const { daily, norm, weights, decay, ranks } = parsed;
+        type Persisted = {
+          daily?: DailyStats[];
+          norm?: NormalizationParams;
+          weights?: WeightParams;
+          decay?: DecayParams;
+          ranks?: RankBreakpoints;
+        };
+        const obj = parsed as Persisted;
+        const { daily, norm, weights, decay, ranks } = obj;
         useAppStore.setState({
           ...(norm ? { norm } : {}),
           ...(weights ? { weights } : {}),
