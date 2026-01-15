@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAppStore } from "@/lib/store";
+import type { AppState } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Play, Pause, RotateCcw } from "lucide-react";
@@ -19,8 +20,11 @@ export function AutoDataGenerator() {
     const dateStr = now.toISOString().split("T")[0];
 
   // 前回の ed を取得
-  // useAppStore is a Zustand hook which exposes getState() on the hook object
-  const state = typeof (useAppStore as any).getState === "function" ? useAppStore.getState() : null;
+  // useAppStore exposes getState(); cast to unknown then to a typed shape to avoid `any` lint errors
+  const hasGetState = typeof (useAppStore as unknown as { getState?: unknown }).getState === "function";
+  const state: AppState | null = hasGetState
+    ? (useAppStore as unknown as { getState: () => AppState }).getState()
+    : null;
   const prevEds = state?.eds ?? [];
     const lastEd = prevEds.length ? prevEds[prevEds.length - 1].ed : 0;
 
