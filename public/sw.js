@@ -12,7 +12,12 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        return cache.addAll(urlsToCache).catch((err) => {
+          // In dev environments some resources may be unavailable during SW install.
+          // Log and continue so the service worker still installs.
+          console.warn('cache.addAll failed during install, continuing without full cache', err);
+          return Promise.resolve();
+        });
       })
   );
 });
@@ -22,8 +27,22 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // キャッシュがあれば返す、なければネットワークから取得
-        return response || fetch(event.request);
+        if (response) return response;
+        // If network fetch fails (dev server, CORS, offline), catch and return a graceful fallback response
+        return fetch(event.request).catch((err) => {
+          console.warn('Fetch failed for', event.request.url, err);
+          // Return a simple 504 response so callers get a non-unhandled rejection
+          return new Response('Service Worker fetch failed', {
+            status: 504,
+            statusText: 'Gateway Timeout',
+            headers: { 'Content-Type': 'text/plain' },
+          });
+        });
+      })
+      .catch((err) => {
+        // Catch any cache.match errors as well
+        console.error('Service Worker fetch handler error', err);
+        return fetch(event.request).catch(() => new Response(null, { status: 504 }));
       })
   );
 });
