@@ -14,12 +14,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings } from "lucide-react";
-import { Play, Pause } from "lucide-react";
+import { Settings, Play, Pause } from "lucide-react";
 import type { AppState } from "@/lib/store";
 
 export function SettingsDialog() {
   const { norm, weights, decay, ranks, setParams } = useAppStore();
+  const reset = useAppStore((s) => s.reset);
   const addDaily = useAppStore((s) => s.addDaily);
   const [isOpen, setIsOpen] = useState(false);
   const debugMode = useAppStore((s) => s.debugMode);
@@ -41,9 +41,79 @@ export function SettingsDialog() {
     return () => window.removeEventListener("open-settings-api", onOpen as EventListener);
   }, []);
 
-  // 自動更新用
-  const autoRef = useRef<NodeJS.Timeout | null>(null);
+  // Auto-generator for demo: 2分毎にデータを追加。初期スコアは -100 (表示)
   const [autoRunning, setAutoRunning] = useState(false);
+  const autoRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startAuto = () => {
+    if (autoRunning) return;
+    setAutoRunning(true);
+
+    // reset store to start fresh series
+    reset();
+
+    // compute initial target QFI: -100 display => latestQfi = -ranks.A
+    const targetQfi = -(ranks.A ?? 9);
+
+    // first item: prevQfi = 0, decayFactor = 0 => ed = targetQfi
+    const edValue = targetQfi;
+
+    const alpha = weights.alpha || 1;
+    const sigmaTime = norm.sigmaTime || 1;
+    const muTime = norm.muTime || 0;
+
+    let timeMinutes = (edValue / alpha) * sigmaTime + muTime;
+    if (!Number.isFinite(timeMinutes)) timeMinutes = muTime;
+    if (timeMinutes < 0) timeMinutes = 0;
+
+    // add initial record immediately
+    addDaily({
+      date: new Date().toISOString().split("T")[0],
+      timeMinutes: Math.round(timeMinutes),
+      moneyJpy: 0,
+      emotionZ: 0,
+      capturedAt: new Date().toISOString(),
+    });
+
+    // schedule recurring updates every 2 minutes
+    autoRef.current = setInterval(() => {
+      try {
+        const hasGetState = typeof (useAppStore as unknown as { getState?: unknown }).getState === "function";
+        const state: AppState | null = hasGetState
+          ? (useAppStore as unknown as { getState: () => AppState }).getState()
+          : null;
+        const prevQfi = state?.qfi?.at(-1)?.qfi ?? 0;
+
+        // compute decay factor used in qfi series (same as computeQfiSeries)
+        const halfLife = decay.halfLifeDays || 14;
+        const lambda = Math.log(2) / halfLife;
+        const decayFactor = Math.exp(-lambda);
+
+        // pick a delta within ±5
+        const delta = (Math.random() * 10) - 5;
+        const target = prevQfi + delta;
+
+        // ed required to reach target: ed = target - prevQfi * decayFactor
+        const edReq = target - prevQfi * decayFactor;
+
+        // convert edReq to timeMinutes assuming money/emotion = 0
+        const timeMin = (edReq / alpha) * sigmaTime + muTime;
+        let tm = timeMin;
+        if (!Number.isFinite(tm)) tm = muTime;
+        if (tm < 0) tm = 0;
+
+        addDaily({
+          date: new Date().toISOString().split("T")[0],
+          timeMinutes: Math.round(tm),
+          moneyJpy: 0,
+          emotionZ: 0,
+          capturedAt: new Date().toISOString(),
+        });
+      } catch (e) {
+        // ignore
+      }
+    }, 2 * 60 * 1000);
+  };
 
   const stopAuto = () => {
     setAutoRunning(false);
@@ -51,46 +121,6 @@ export function SettingsDialog() {
       clearInterval(autoRef.current);
       autoRef.current = null;
     }
-  };
-
-  const startAuto = () => {
-    if (autoRunning) return;
-    setAutoRunning(true);
-
-    // 初期値: QFI を -100 にする -> ed を -ranks.A にする
-    const maxScore = ranks.A;
-    const targetEdInit = -maxScore;
-    const alpha = weights.alpha || 1;
-    const sigmaTime = norm.sigmaTime || 1;
-    const muTime = norm.muTime || 0;
-    let timeMinutes = (targetEdInit / alpha) * sigmaTime + muTime;
-    if (!Number.isFinite(timeMinutes)) timeMinutes = muTime;
-    if (timeMinutes < 0) timeMinutes = 0;
-
-    const now = new Date();
-    const dateStr = now.toISOString().split("T")[0];
-
-    addDaily({ date: dateStr, timeMinutes: Math.round(timeMinutes), moneyJpy: 0, emotionZ: 0, capturedAt: now.toISOString() });
-
-    // 2分毎に前回 ed の ±5 の範囲で追加
-    autoRef.current = setInterval(() => {
-      const hasGetState = typeof (useAppStore as unknown as { getState?: unknown }).getState === "function";
-      const state: AppState | null = hasGetState
-        ? (useAppStore as unknown as { getState: () => AppState }).getState()
-        : null;
-      const prevEds = state?.eds ?? [];
-      const lastEd = prevEds.length ? prevEds[prevEds.length - 1].ed : targetEdInit;
-      const delta = (Math.random() * 10) - 5; // -5..+5
-      const targetEd = lastEd + delta;
-
-      let tm = (targetEd / alpha) * sigmaTime + muTime;
-      if (!Number.isFinite(tm)) tm = muTime;
-      if (tm < 0) tm = 0;
-
-      const now2 = new Date();
-      const dateStr2 = now2.toISOString().split("T")[0];
-      addDaily({ date: dateStr2, timeMinutes: Math.round(tm), moneyJpy: 0, emotionZ: 0, capturedAt: now2.toISOString() });
-    }, 2 * 60 * 1000);
   };
 
   // パラメータの詳細編集 UI は削除済みです。
@@ -120,32 +150,24 @@ export function SettingsDialog() {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>パラメータ設定</DialogTitle>
-            <div>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={autoRunning ? "停止" : "開始"}
-                onClick={() => {
-                  if (autoRunning) stopAuto();
-                  else startAuto();
-                }}
-              >
-                {autoRunning ? (
-                  <Pause className="h-4 w-4" />
-                ) : (
-                  <Play className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
+          <DialogTitle>パラメータ設定</DialogTitle>
           <DialogDescription>
             QFIの計算パラメータを調整できます。変更後は自動的に再計算されます。
           </DialogDescription>
           {debugMode && (
             <p className="text-sm text-destructive">デバッグモードが有効です</p>
           )}
+          <div className="pt-2 flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={autoRunning ? "自動更新停止" : "自動更新開始"}
+              onClick={() => (autoRunning ? stopAuto() : startAuto())}
+            >
+              {autoRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+            <span className="text-sm text-muted-foreground">2分ごとに QFI を自動更新（初期値 -100）</span>
+          </div>
             <div className="pt-2">
             <h4 className="font-medium text-sm">API 入力</h4>
             <div className="space-y-2 mt-2">
