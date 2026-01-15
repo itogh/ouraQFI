@@ -18,9 +18,10 @@ export function AutoDataGenerator() {
     const now = new Date();
     const dateStr = now.toISOString().split("T")[0];
 
-    // 前回の ed を取得
-    const state = (useAppStore as any).getState ? (useAppStore as any).getState() : null;
-    const prevEds = state?.eds ?? [];
+  // 前回の ed を取得
+  // useAppStore is a Zustand hook which exposes getState() on the hook object
+  const state = typeof (useAppStore as any).getState === "function" ? useAppStore.getState() : null;
+  const prevEds = state?.eds ?? [];
     const lastEd = prevEds.length ? prevEds[prevEds.length - 1].ed : 0;
 
     // delta を -5..+5 にする
