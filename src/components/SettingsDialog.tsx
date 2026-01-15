@@ -15,9 +15,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Settings } from "lucide-react";
+import { Play, Pause } from "lucide-react";
+import type { AppState } from "@/lib/store";
 
 export function SettingsDialog() {
   const { norm, weights, decay, ranks, setParams } = useAppStore();
+  const addDaily = useAppStore((s) => s.addDaily);
   const [isOpen, setIsOpen] = useState(false);
   const debugMode = useAppStore((s) => s.debugMode);
   const enableDebug = useAppStore((s) => s.enableDebug);
@@ -37,6 +40,58 @@ export function SettingsDialog() {
     window.addEventListener("open-settings-api", onOpen as EventListener);
     return () => window.removeEventListener("open-settings-api", onOpen as EventListener);
   }, []);
+
+  // 自動更新用
+  const autoRef = useRef<NodeJS.Timeout | null>(null);
+  const [autoRunning, setAutoRunning] = useState(false);
+
+  const stopAuto = () => {
+    setAutoRunning(false);
+    if (autoRef.current) {
+      clearInterval(autoRef.current);
+      autoRef.current = null;
+    }
+  };
+
+  const startAuto = () => {
+    if (autoRunning) return;
+    setAutoRunning(true);
+
+    // 初期値: QFI を -100 にする -> ed を -ranks.A にする
+    const maxScore = ranks.A;
+    const targetEdInit = -maxScore;
+    const alpha = weights.alpha || 1;
+    const sigmaTime = norm.sigmaTime || 1;
+    const muTime = norm.muTime || 0;
+    let timeMinutes = (targetEdInit / alpha) * sigmaTime + muTime;
+    if (!Number.isFinite(timeMinutes)) timeMinutes = muTime;
+    if (timeMinutes < 0) timeMinutes = 0;
+
+    const now = new Date();
+    const dateStr = now.toISOString().split("T")[0];
+
+    addDaily({ date: dateStr, timeMinutes: Math.round(timeMinutes), moneyJpy: 0, emotionZ: 0, capturedAt: now.toISOString() });
+
+    // 2分毎に前回 ed の ±5 の範囲で追加
+    autoRef.current = setInterval(() => {
+      const hasGetState = typeof (useAppStore as unknown as { getState?: unknown }).getState === "function";
+      const state: AppState | null = hasGetState
+        ? (useAppStore as unknown as { getState: () => AppState }).getState()
+        : null;
+      const prevEds = state?.eds ?? [];
+      const lastEd = prevEds.length ? prevEds[prevEds.length - 1].ed : targetEdInit;
+      const delta = (Math.random() * 10) - 5; // -5..+5
+      const targetEd = lastEd + delta;
+
+      let tm = (targetEd / alpha) * sigmaTime + muTime;
+      if (!Number.isFinite(tm)) tm = muTime;
+      if (tm < 0) tm = 0;
+
+      const now2 = new Date();
+      const dateStr2 = now2.toISOString().split("T")[0];
+      addDaily({ date: dateStr2, timeMinutes: Math.round(tm), moneyJpy: 0, emotionZ: 0, capturedAt: now2.toISOString() });
+    }, 2 * 60 * 1000);
+  };
 
   // パラメータの詳細編集 UI は削除済みです。
   // 保存時には現在のストア値をそのまま `setParams` に渡します。
@@ -65,7 +120,26 @@ export function SettingsDialog() {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>パラメータ設定</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>パラメータ設定</DialogTitle>
+            <div>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={autoRunning ? "停止" : "開始"}
+                onClick={() => {
+                  if (autoRunning) stopAuto();
+                  else startAuto();
+                }}
+              >
+                {autoRunning ? (
+                  <Pause className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
           <DialogDescription>
             QFIの計算パラメータを調整できます。変更後は自動的に再計算されます。
           </DialogDescription>
