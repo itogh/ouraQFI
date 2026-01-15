@@ -39,6 +39,9 @@ export function EdChart({ data }: EdChartProps) {
 
   return (
     <div className="h-64">
+      <div className="mb-2 text-sm text-muted-foreground">
+        日時スコア: 日付ごとの Ed 値を示します。活動時間を正規化して算出されたスコアです。
+      </div>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke={`hsl(var(--border) / 0.6)`} />
@@ -51,7 +54,7 @@ export function EdChart({ data }: EdChartProps) {
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
-          <Bar dataKey="ed" fill={`hsl(var(--primary))`} name="Ed スコア" />
+          <Bar dataKey="ed" fill="#ef4444" name="Ed スコア" />
         </BarChart>
       </ResponsiveContainer>
     </div>
