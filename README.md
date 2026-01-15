@@ -1,6 +1,6 @@
 # QFI — Quantified Faith Index
 
-活動を定量化し、信仰度指数（QFI）としてビジュアライズするWebアプリケーション。
+活動を定量化し、（QFI）としてビジュアライズするWebアプリケーション。
 ```bash
 # 依存関係のインストール
 pnpm install
