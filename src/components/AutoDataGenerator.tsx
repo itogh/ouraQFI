@@ -62,27 +62,27 @@ export function AutoDataGenerator() {
     };
   };
 
-  // 3分ごとにデータを追加（デバッグ用 interval とは別に、ユーザー操作で動かす自動生成）
+  // 1日ごとにデータを追加（ユーザー操作で動かす自動生成）
   const startAutoGeneration = () => {
     if (isRunning) return;
 
     setIsRunning(true);
-    setNextUpdate(180); // 180秒 = 3分
+  setNextUpdate(24 * 60 * 60); // 1日（秒）
 
     // 最初のデータをすぐに追加
     const data = generateBasedOnPrev();
     addDaily(data);
 
-    // 3分ごとにデータを追加
+    // 1日ごとにデータを追加
     intervalRef.current = setInterval(() => {
       const d = generateBasedOnPrev();
       addDaily(d);
-      setNextUpdate(180); // リセット
+      setNextUpdate(24 * 60 * 60); // リセット（日秒）
     }, 3 * 60 * 1000);
 
     // カウントダウン用のタイマー（1秒ごと）
     countdownRef.current = setInterval(() => {
-      setNextUpdate((prev) => (prev !== null && prev > 0 ? prev - 1 : 180));
+      setNextUpdate((prev) => (prev !== null && prev > 0 ? prev - 1 : 24 * 60 * 60));
     }, 1000);
   };
 
@@ -125,7 +125,7 @@ export function AutoDataGenerator() {
       <CardHeader>
         <CardTitle>展示用データ生成</CardTitle>
           <CardDescription>
-            30秒毎にデータを自動生成（デモ用）
+            1日ごとにデータを自動生成（デモ用）
           </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -63,8 +63,8 @@ export function SettingsDialog() {
       capturedAt: new Date().toISOString(),
     });
 
-    // schedule recurring updates every 2 minutes
-    autoRef.current = setInterval(() => {
+  // schedule recurring updates every 1 day
+  autoRef.current = setInterval(() => {
       try {
         const hasGetState = typeof (useAppStore as unknown as { getState?: unknown }).getState === "function";
         const state: AppState | null = hasGetState
@@ -99,7 +99,7 @@ export function SettingsDialog() {
       } catch (e) {
         // ignore
       }
-    }, 2 * 60 * 1000);
+    }, 24 * 60 * 60 * 1000);
   };
 
   const stopAuto = () => {
@@ -153,7 +153,7 @@ export function SettingsDialog() {
             >
               {autoRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
-            <span className="text-sm text-muted-foreground">2分ごとに TRACE を自動更新（初期値 -50）</span>
+            <span className="text-sm text-muted-foreground">1日ごとに TRACE を自動更新（初期値はランダム）</span>
           </div>
             <div className="pt-2">
             <h4 className="font-medium text-sm">API 入力</h4>
