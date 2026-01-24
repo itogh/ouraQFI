@@ -23,8 +23,8 @@ export function AutoDataGenerator() {
       ? (useAppStore as unknown as { getState: () => AppState }).getState()
       : null;
 
-    const norm = state?.norm ?? { muTime: 60, sigmaTime: 20 };
-    const weights = state?.weights ?? { alpha: 1 };
+  const norm = state?.norm ?? { muTime: 60, sigmaTime: 20, muMoney: 1000, sigmaMoney: 400 };
+  const weights = state?.weights ?? { alpha: 1, beta: 1, gamma: 1 };
     const alpha = weights.alpha || 1;
     const sigmaTime = norm.sigmaTime || 1;
     const muTime = norm.muTime || 0;
@@ -48,15 +48,26 @@ export function AutoDataGenerator() {
       d.setDate(base.getDate() + i);
       const dateStr = d.toISOString().split("T")[0];
 
-      // ED を timeMinutes に逆算（money/emotion を 0 と仮定）
+      // ED を満たすように、まず money/emotion を決め、それらを使って timeMinutes を逆算する
       const ed = eds[i];
-      let timeMinutes = (ed / alpha) * sigmaTime + muTime;
+      // pick money and emotion first
+      const moneyJpy = Math.round(Math.random() * 1000);
+      const emotionZ = Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5));
+
+      const muMoney = norm.muMoney ?? 0;
+      const sigmaMoney = norm.sigmaMoney || 1;
+      const beta = weights.beta ?? 0;
+      const gamma = weights.gamma ?? 0;
+
+      const zMoney = sigmaMoney > 0 ? (moneyJpy - muMoney) / sigmaMoney : 0;
+      const zEmotion = emotionZ; // already sensor z-score style
+
+      // timeMinutes を解く: ed = alpha*zTime + beta*zMoney + gamma*zEmotion
+      // zTime = (timeMinutes - muTime) / sigmaTime
+      let timeMinutes = ((ed - (beta * zMoney) - (gamma * zEmotion)) / alpha) * sigmaTime + muTime;
       if (!Number.isFinite(timeMinutes)) timeMinutes = muTime;
       if (timeMinutes < 1) timeMinutes = 1;
       timeMinutes = Math.min(24 * 60, timeMinutes);
-
-      const moneyJpy = Math.round(Math.random() * 1000);
-      const emotionZ = Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5));
 
       recs.push({
         date: dateStr,
