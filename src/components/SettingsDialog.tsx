@@ -52,26 +52,14 @@ export function SettingsDialog() {
     // reset store to start fresh series
     reset();
 
-  // compute initial target TRACE: -50 display => latestQfi = -(ranks.A * 0.5)
-    const targetQfi = -( (ranks.A ?? 9) * 0.5 );
-
-  // first item: prevQfi = 0, decayFactor = 0 => ed = targetQfi
-    const edValue = targetQfi;
-
-    const alpha = weights.alpha || 1;
-    const sigmaTime = norm.sigmaTime || 1;
-    const muTime = norm.muTime || 0;
-
-    let timeMinutes = (edValue / alpha) * sigmaTime + muTime;
-    if (!Number.isFinite(timeMinutes)) timeMinutes = muTime;
-    if (timeMinutes < 0) timeMinutes = 0;
-
-    // add initial record immediately
+  // 初期値: 固定 -50 ではなく、実運用に近いランダム初期値を与える
+    // 初回は 30..180 分の範囲からサンプリングして自然な初期 ED をつくる
+    const initialTime = Math.round(30 + Math.random() * 150);
     addDaily({
       date: new Date().toISOString().split("T")[0],
-      timeMinutes: Math.round(timeMinutes),
-      moneyJpy: 0,
-      emotionZ: 0,
+      timeMinutes: Math.round(initialTime),
+      moneyJpy: Math.round(Math.random() * 1000),
+      emotionZ: Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5)),
       capturedAt: new Date().toISOString(),
     });
 
@@ -82,40 +70,30 @@ export function SettingsDialog() {
         const state: AppState | null = hasGetState
           ? (useAppStore as unknown as { getState: () => AppState }).getState()
           : null;
-        const prevQfi = state?.qfi?.at(-1)?.qfi ?? 0;
 
-  // compute decay factor used in TRACE series (same as computeQfiSeries)
-        const halfLife = decay.halfLifeDays || 14;
-        const lambda = Math.log(2) / halfLife;
-        const decayFactor = Math.exp(-lambda);
+        const prevDaily = state?.daily ?? [];
+        const lastTime = prevDaily.length ? prevDaily[prevDaily.length - 1].timeMinutes : null;
 
-  // pick a delta within ±2.5 (reduced to avoid extreme jumps)
-  const delta = (Math.random() * 5) - 2.5;
-        const target = prevQfi + delta;
-
-        // ed required to reach target: ed = target - prevQfi * decayFactor
-        const edReq = target - prevQfi * decayFactor;
-
-  // convert edReq to timeMinutes assuming money/emotion = 0
-  // but first clamp edReq to avoid producing very small/negative timeMinutes
-  // define an acceptable time window around muTime (mu ± 2σ)
-  const maxTimeAllowed = muTime + (sigmaTime * 2);
-  const minTimeAllowed = Math.max(0, muTime - (sigmaTime * 2));
-  const maxEdAllowed = (maxTimeAllowed - muTime) * alpha;
-  const minEdAllowed = (minTimeAllowed - muTime) * alpha;
-  const clampedEdReq = Math.max(minEdAllowed, Math.min(maxEdAllowed, edReq));
-
-  const timeMin = (clampedEdReq / alpha) * sigmaTime + muTime;
-  let tm = timeMin;
-  if (!Number.isFinite(tm)) tm = muTime;
-  // keep at least 1 minute to avoid zeroing-out and losing variation
-  if (tm < 1) tm = 1;
+        let timeMinutes: number;
+        if (lastTime === null) {
+          timeMinutes = Math.round(30 + Math.random() * 150);
+        } else {
+          const rand = () => {
+            let sum = 0;
+            for (let i = 0; i < 6; i++) sum += (Math.random() - 0.5);
+            return sum;
+          };
+          const sd = 20;
+          const deltaTime = Math.round(rand() * sd);
+          timeMinutes = Math.max(1, lastTime + deltaTime);
+          timeMinutes = Math.min(24 * 60, timeMinutes);
+        }
 
         addDaily({
           date: new Date().toISOString().split("T")[0],
-          timeMinutes: Math.round(tm),
-          moneyJpy: 0,
-          emotionZ: 0,
+          timeMinutes: Math.round(timeMinutes),
+          moneyJpy: Math.round(Math.random() * 1000),
+          emotionZ: Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5)),
           capturedAt: new Date().toISOString(),
         });
       } catch (e) {

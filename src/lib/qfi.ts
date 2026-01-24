@@ -67,10 +67,20 @@ export function computeQfiSeries(eds: ScoreEd[], decay: DecayParams): ScoreQfiPo
   let prevQfi = 0;
   for (let i = 0; i < eds.length; i++) {
     const ed = eds[i];
-    // 連続日と仮定して 1日あたり e^{-λ} 減衰
-    const decayFactor = i === 0 ? 0 : Math.exp(-lambda);
+    // 日付差分に基づく減衰: 前日との日数差を使う
+    let decayFactor = 0;
+    if (i > 0) {
+      const prevDate = new Date(eds[i - 1].date);
+      const curDate = new Date(ed.date);
+      const diffMs = curDate.getTime() - prevDate.getTime();
+      // 日数差（小数可）
+      const days = Math.max(0, diffMs / (1000 * 60 * 60 * 24));
+      decayFactor = Math.exp(-lambda * days);
+    }
+
     const current = ed.ed + prevQfi * decayFactor;
     const delta = i === 0 ? 0 : current - prevQfi;
+
     // 防御: 異常に大きな値が現れた場合はクリップする
     const CLAMP_QFI = 1000;
     const clipped = Math.max(-CLAMP_QFI, Math.min(CLAMP_QFI, current));

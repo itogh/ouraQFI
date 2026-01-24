@@ -24,7 +24,8 @@ export function DataTable({ data, eds, qfi }: DataTableProps) {
 
   // データを結合して日付でソート
   const combined = data.map((d) => {
-    const ed = eds.find((e) => e.date === d.date);
+    // マッチングは可能な限り厳密に：capturedAt が一致すればそちらを優先し、無ければ日付でフォールバック
+    const ed = eds.find((e) => (e.capturedAt && d.capturedAt ? e.capturedAt === d.capturedAt : e.date === d.date));
     const q = qfi.find((q) => q.date === d.date);
     return {
       ...d,

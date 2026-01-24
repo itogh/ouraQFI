@@ -33,6 +33,7 @@ export type DecayParams = {
 export type ScoreEd = {
   date: string;
   ed: number;
+  capturedAt?: string;
   zTime?: number;
   zMoney?: number;
   zEmotion?: number;

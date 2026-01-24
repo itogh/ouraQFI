@@ -178,8 +178,37 @@ export const useAppStore = create<AppState>((set, get) => ({
       ...r,
       capturedAt: (r as DailyStats).capturedAt ?? new Date().toISOString(),
     }));
-    set((s) => ({ daily: [...s.daily, ...withTs] }));
+    // Merge records by date: if a record for the same date exists, replace it.
+    set((s) => {
+      const existing = [...s.daily];
+      for (const rec of withTs) {
+        const idx = existing.findIndex((d) => d.date === rec.date);
+        if (idx >= 0) {
+          existing[idx] = { ...existing[idx], ...rec };
+        } else {
+          existing.push(rec);
+        }
+      }
+      return { daily: existing };
+    });
     get().recompute();
+    // If debug mode is on, output recent state to help diagnose ED/QFI behavior
+    const state = get();
+    if (state.debugMode) {
+      try {
+        // show last 10 entries for daily, eds, qfi
+        // eslint-disable-next-line no-console
+        console.debug("[ouraQFI debug] recent daily:", state.daily.slice(-10));
+        // eslint-disable-next-line no-console
+        console.debug("[ouraQFI debug] recent eds:", state.eds.slice(-10));
+        // eslint-disable-next-line no-console
+        console.debug("[ouraQFI debug] recent qfi:", state.qfi.slice(-10));
+        // eslint-disable-next-line no-console
+        console.debug("[ouraQFI debug] params:", { ranks: state.ranks, norm: state.norm, weights: state.weights, decay: state.decay });
+      } catch (e) {
+        // ignore
+      }
+    }
   },
 
   // Debug generation controls
