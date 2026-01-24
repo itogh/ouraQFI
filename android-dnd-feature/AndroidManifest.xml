@@ -1,0 +1,5 @@
+<!-- マニフェストに次を追加してください -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- DND 操作用の権限 -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+</manifest>
