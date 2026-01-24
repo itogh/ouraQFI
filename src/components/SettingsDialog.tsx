@@ -89,18 +89,27 @@ export function SettingsDialog() {
         const lambda = Math.log(2) / halfLife;
         const decayFactor = Math.exp(-lambda);
 
-        // pick a delta within ±5
-        const delta = (Math.random() * 10) - 5;
+  // pick a delta within ±2.5 (reduced to avoid extreme jumps)
+  const delta = (Math.random() * 5) - 2.5;
         const target = prevQfi + delta;
 
         // ed required to reach target: ed = target - prevQfi * decayFactor
         const edReq = target - prevQfi * decayFactor;
 
-        // convert edReq to timeMinutes assuming money/emotion = 0
-        const timeMin = (edReq / alpha) * sigmaTime + muTime;
-        let tm = timeMin;
-        if (!Number.isFinite(tm)) tm = muTime;
-        if (tm < 0) tm = 0;
+  // convert edReq to timeMinutes assuming money/emotion = 0
+  // but first clamp edReq to avoid producing very small/negative timeMinutes
+  // define an acceptable time window around muTime (mu ± 2σ)
+  const maxTimeAllowed = muTime + (sigmaTime * 2);
+  const minTimeAllowed = Math.max(0, muTime - (sigmaTime * 2));
+  const maxEdAllowed = (maxTimeAllowed - muTime) * alpha;
+  const minEdAllowed = (minTimeAllowed - muTime) * alpha;
+  const clampedEdReq = Math.max(minEdAllowed, Math.min(maxEdAllowed, edReq));
+
+  const timeMin = (clampedEdReq / alpha) * sigmaTime + muTime;
+  let tm = timeMin;
+  if (!Number.isFinite(tm)) tm = muTime;
+  // keep at least 1 minute to avoid zeroing-out and losing variation
+  if (tm < 1) tm = 1;
 
         addDaily({
           date: new Date().toISOString().split("T")[0],
