@@ -53,6 +53,9 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Use provided image in public/ as favicon and apple-touch-icon */}
+        <link rel="icon" href="/image-copy.png" />
+        <link rel="apple-touch-icon" href="/image-copy.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
