@@ -194,10 +194,20 @@ export const useAppStore = create<AppState>((set, get) => ({
         const idx = existing.findIndex((d) => d.date === rec.date);
         if (idx >= 0) {
           if (s.lockDailyOncePerDay) {
-            // skip overwrite
+            // skip overwrite when lock is enabled
             continue;
           } else {
-            existing[idx] = { ...existing[idx], ...rec };
+            const existingRec = existing[idx];
+            const incomingIsEphemeral = (rec as DailyStats).ephemeral === true;
+            const existingIsEphemeral = existingRec.ephemeral === true;
+            // If we already have a non-ephemeral (permanent) record for this date,
+            // do not let an incoming ephemeral (transient) record overwrite it.
+            if (!existingIsEphemeral && incomingIsEphemeral) {
+              // keep existing permanent record
+              continue;
+            }
+            // Otherwise merge (incoming non-ephemeral will replace ephemeral or update fields)
+            existing[idx] = { ...existingRec, ...rec };
           }
         } else {
           existing.push(rec);
