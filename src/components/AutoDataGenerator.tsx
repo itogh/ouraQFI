@@ -78,7 +78,7 @@ export function AutoDataGenerator() {
       const d = generateBasedOnPrev();
       addDaily(d);
       setNextUpdate(24 * 60 * 60); // リセット（日秒）
-    }, 3 * 60 * 1000);
+    }, 24 * 60 * 60 * 1000);
 
     // カウントダウン用のタイマー（1秒ごと）
     countdownRef.current = setInterval(() => {
@@ -152,8 +152,8 @@ export function AutoDataGenerator() {
 
         {!isRunning && (
           <p className="text-sm text-muted-foreground">
-            開始ボタンを押すと、30秒ごとに30〜180分のランダムな活動時間データが生成されます。
-          </p>
+              開始ボタンを押すと、1日ごとに30〜180分のランダムな活動時間データが生成されます。
+            </p>
         )}
       </CardContent>
     </Card>
