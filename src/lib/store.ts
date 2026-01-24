@@ -14,7 +14,7 @@ function stopDebugInterval() {
 
 function startDebugInterval(get: () => AppState, set: (patch: Partial<AppState>) => void) {
   stopDebugInterval();
-  // every 3 minutes
+  // every 2 minutes (reflect frequent updates immediately into cumulative scores)
   __debugInterval = setInterval(() => {
     try {
       const state = get();
@@ -53,7 +53,8 @@ function startDebugInterval(get: () => AppState, set: (patch: Partial<AppState>)
         moneyJpy: Math.round(Math.random() * 1000),
         emotionZ: Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5)),
         capturedAt: now.toISOString(),
-        ephemeral: true,
+        // mark as non-ephemeral so these frequent measurements are included in recompute
+        ephemeral: false,
       };
 
       // add
@@ -271,7 +272,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         moneyJpy: Math.round(Math.random() * 1000),
         emotionZ: Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5)),
         capturedAt: now.toISOString(),
-        ephemeral: true,
+        // include this in cumulative calculations
+        ephemeral: false,
       };
 
       state.addDaily(rec);
