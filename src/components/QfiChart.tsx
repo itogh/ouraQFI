@@ -16,7 +16,7 @@ export function QfiChart({ data }: QfiChartProps) {
         <div className="bg-background border rounded-lg shadow-lg p-3">
           <p className="font-semibold text-sm mb-1">{item.date}</p>
           <p className="text-sm text-foreground">
-            QFI: <span className="font-medium">{item.qfi.toFixed(2)}</span>
+            TRACE: <span className="font-medium">{item.qfi.toFixed(2)}</span>
           </p>
           {item.delta !== undefined && item.delta !== 0 && (
             <p className="text-xs text-muted-foreground">
@@ -57,7 +57,7 @@ export function QfiChart({ data }: QfiChartProps) {
             stroke={`hsl(var(--primary))`}
             strokeWidth={2}
             dot={false}
-            name="QFI"
+            name="TRACE"
           />
         </LineChart>
       </ResponsiveContainer>

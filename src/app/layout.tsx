@@ -14,14 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "QFI — Quantified Faith Index",
-  description: "Self-transcendence scoring with Ed/QFI and Proof-of-Devotion",
+  title: "TRACE",
+  description: "Self-transcendence scoring with Ed/TRACE and Proof-of-Devotion",
   manifest: "/manifest.json",
   themeColor: "#6366f1",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "QFI",
+    title: "TRACE",
   },
   viewport: {
     width: "device-width",

@@ -1,6 +1,6 @@
 {
-  "name": "Quantified Faith Index",
-  "short_name": "QFI",
+  "name": "TRACE — Quantified Faith Index",
+  "short_name": "TRACE",
   "description": "貢献度を定量化・可視化するWebアプリケーション",
   "start_url": "/",
   "display": "standalone",

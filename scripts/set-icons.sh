@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Usage:
-# 1. Download the attachment image (the QFI brain image) into the project root and name it qfi.png
+# 1. Download the attachment image (the TRACE brain image) into the project root and name it trace.png
 #    or place it anywhere and pass the path as the first argument.
 # 2. Run: ./scripts/set-icons.sh [path/to/image.png]
 #
@@ -9,12 +9,12 @@
 
 set -euo pipefail
 
-SRC=${1:-qfi.png}
+SRC=${1:-trace.png}
 OUT_DIR="public"
 
 if [ ! -f "$SRC" ]; then
   echo "Source image not found: $SRC"
-  echo "Place the QFI image in the repo root named 'qfi.png' or pass the path: ./scripts/set-icons.sh path/to/image.png"
+  echo "Place the TRACE image in the repo root named 'trace.png' or pass the path: ./scripts/set-icons.sh path/to/image.png"
   exit 1
 fi
 

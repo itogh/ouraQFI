@@ -55,7 +55,7 @@ export function DataTable({ data, eds, qfi }: DataTableProps) {
             <TableHead>日付</TableHead>
             <TableHead className="text-right">採取時刻</TableHead>
             <TableHead className="text-right">Ed</TableHead>
-            <TableHead className="text-right">QFI</TableHead>
+            <TableHead className="text-right">TRACE</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

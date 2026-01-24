@@ -39,7 +39,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div>
-                <h1 className="text-2xl font-bold">Quantified Faith Index</h1>
+                <h1 className="text-2xl font-bold">TRACE</h1>
                 <p className="text-sm text-muted-foreground mt-1">日々の活動から熱中度を可視化するダッシュボード</p>
               </div>
             </div>
@@ -74,7 +74,7 @@ export default function Home() {
 
           <Card className="transition-shadow hover:shadow-lg rounded-xl border border-transparent bg-gradient-to-br from-white/50 to-slate-50 dark:from-gray-900 dark:to-gray-800">
             <CardHeader>
-              <CardTitle>累積スコア（QFI）</CardTitle>
+              <CardTitle>累積スコア（TRACE）</CardTitle>
               <CardDescription>減衰を考慮した累積熱中度指数</CardDescription>
             </CardHeader>
             <CardContent>

@@ -52,10 +52,10 @@ export function SettingsDialog() {
     // reset store to start fresh series
     reset();
 
-    // compute initial target QFI: -100 display => latestQfi = -ranks.A
+  // compute initial target TRACE: -100 display => latestQfi = -ranks.A
     const targetQfi = -(ranks.A ?? 9);
 
-    // first item: prevQfi = 0, decayFactor = 0 => ed = targetQfi
+  // first item: prevQfi = 0, decayFactor = 0 => ed = targetQfi
     const edValue = targetQfi;
 
     const alpha = weights.alpha || 1;
@@ -84,7 +84,7 @@ export function SettingsDialog() {
           : null;
         const prevQfi = state?.qfi?.at(-1)?.qfi ?? 0;
 
-        // compute decay factor used in qfi series (same as computeQfiSeries)
+  // compute decay factor used in TRACE series (same as computeQfiSeries)
         const halfLife = decay.halfLifeDays || 14;
         const lambda = Math.log(2) / halfLife;
         const decayFactor = Math.exp(-lambda);
@@ -151,8 +151,8 @@ export function SettingsDialog() {
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>パラメータ設定</DialogTitle>
-          <DialogDescription>
-            QFIの計算パラメータを調整できます。変更後は自動的に再計算されます。
+            <DialogDescription>
+            TRACEの計算パラメータを調整できます。変更後は自動的に再計算されます。
           </DialogDescription>
           {debugMode && (
             <p className="text-sm text-destructive">デバッグモードが有効です</p>
@@ -166,7 +166,7 @@ export function SettingsDialog() {
             >
               {autoRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
-            <span className="text-sm text-muted-foreground">2分ごとに QFI を自動更新（初期値 -100）</span>
+            <span className="text-sm text-muted-foreground">2分ごとに TRACE を自動更新（初期値 -100）</span>
           </div>
             <div className="pt-2">
             <h4 className="font-medium text-sm">API 入力</h4>

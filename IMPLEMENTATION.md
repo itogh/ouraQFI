@@ -1,8 +1,8 @@
-# QFI (Quantified Faith Index) UI - 実装ドキュメント
+# TRACE (Quantified Faith Index) UI - 実装ドキュメント
 
 ## 📋 概要
 
-UI仕様書に完全準拠したQFI（Quantified Faith Index）フロントエンドの実装が完了しました。
+UI仕様書に完全準拠したTRACE（Quantified Faith Index）フロントエンドの実装が完了しました。
 
 ## 🎯 技術スタック
 
@@ -55,14 +55,14 @@ src/
 │   │   └── tooltip.tsx
 │   ├── RankBadge.tsx         # ランク表示バッジ（A～E）
 │   ├── EdChart.tsx           # 日次スコア棒グラフ
-│   ├── QfiChart.tsx          # 累積スコア折れ線グラフ
+│   ├── QfiChart.tsx          # 累積スコア折れ線グラフ (TRACE)
 │   ├── InputForm.tsx         # データ入力フォーム
 │   ├── DataTable.tsx         # データ一覧テーブル
 │   ├── SettingsDialog.tsx    # パラメータ設定ダイアログ
 │   └── ThemeToggle.tsx       # ダークモード切替
 └── lib/
     ├── types.ts              # 型定義
-    ├── qfi.ts                # QFI計算ロジック
+  ├── qfi.ts                # TRACE計算ロジック (内部ファイル名は変更していません)
     ├── store.ts              # Zustand ストア
     ├── mockApi.ts            # モックAPI
     ├── config.ts             # 設定
@@ -92,13 +92,13 @@ src/
 - Edスコア
 - 内訳（zTime）
 
-### 3. QfiChart
+### 3. QfiChart (TRACE表示用)
 
 **Props**: `data: ScoreQfiPoint[]`
 
-累積スコア（QFI）を折れ線グラフで表示。カスタムツールチップには以下を表示：
+累積スコア（TRACE）を折れ線グラフで表示。カスタムツールチップには以下を表示：
 - 日付
-- QFI値
+- TRACE値
 - 前日差分（delta）
 
 ### 4. InputForm
@@ -135,9 +135,9 @@ src/
 
 1. **入力**: `InputForm`でデータを入力
 2. **保存**: Zustandストアの`addDaily`で保存
-3. **計算**: `qfi.ts`の純関数で Ed → QFI を計算
+3. **計算**: `qfi.ts`の純関数で Ed → TRACE（内部的には qfi を使用）を計算
 4. **表示**: チャートとテーブルで可視化
-5. **ランク判定**: QFI値に基づいてランクを自動決定
+5. **ランク判定**: TRACE値に基づいてランクを自動決定
 
 ## 🎨 デザイン仕様
 
@@ -236,7 +236,7 @@ type Rank = "A" | "B" | "C" | "D" | "E";
 - ✅ メインダッシュボード
 - ✅ ヘッダー（タイトル + ランク表示）
 - ✅ Ed棒グラフ
-- ✅ QFI折れ線グラフ
+- ✅ TRACE折れ線グラフ
 - ✅ 入力フォーム（追加/リセット）
 - ✅ ランクカラーリング
 - ✅ レスポンシブデザイン

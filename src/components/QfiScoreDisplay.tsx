@@ -10,11 +10,11 @@ export function QfiScoreDisplay() {
   const { qfi, ranks } = useAppStore();
   const [prevScore, setPrevScore] = useState<number | null>(null);
   
-  // 最新のQFI値を取得
+  // 最新のTRACE値を取得
   const latestQfi = qfi.at(-1)?.qfi ?? 0;
   const previousQfi = qfi.length >= 2 ? qfi[qfi.length - 2].qfi : null;
   
-  // QFIを-100〜100にスケーリング
+  // TRACEを-100〜100にスケーリング
   // 0を中心に、Aランク閾値を100、-Aランク閾値を-100とする
   const maxScore = ranks.A; // Aランクの閾値を100として扱う
   
@@ -71,7 +71,7 @@ export function QfiScoreDisplay() {
     )}>
       <div className="p-6 text-center space-y-2">
         <div className="text-sm font-medium text-muted-foreground">
-          現在のQFIスコア
+          現在のTRACEスコア
         </div>
         
         <div className="flex items-center justify-center gap-3">
@@ -159,9 +159,9 @@ export function QfiScoreDisplay() {
           </div>
         </div>
         
-        {/* 実際のQFI値（小さく表示） */}
+        {/* 実際のTRACE値（小さく表示） */}
         <div className="text-xs text-muted-foreground pt-2">
-          生値: {latestQfi.toFixed(2)}
+          生値 (TRACE): {latestQfi.toFixed(2)}
           {previousQfi !== null && (
             <span className={cn(
               "ml-2",

@@ -1,6 +1,6 @@
-# QFI — Quantified Faith Index
+# TRACE — Quantified Faith Index
 
-活動を定量化し、（QFI）としてビジュアライズするWebアプリケーション。
+活動を定量化し、（TRACE）としてビジュアライズするWebアプリケーション。
 ```bash
 # 依存関係のインストール
 pnpm install
@@ -26,7 +26,7 @@ pnpm dev
 ### 3. チャートで確認
 
 - **日次スコア（Ed）**: 棒グラフで日々の活動量を表示
-- **累積スコア（QFI）**: 折れ線グラフで減衰を考慮した累積値を表示
+- **累積スコア（TRACE）**: 折れ線グラフで減衰を考慮した累積値を表示
 
 ### 4. ランク確認
 
@@ -71,7 +71,7 @@ src/
 │   ├── ui/                   # shadcn/ui基本コンポーネント
 │   ├── RankBadge.tsx         # ランク表示
 │   ├── EdChart.tsx           # Ed棒グラフ
-│   ├── QfiChart.tsx          # QFI折れ線グラフ
+│   ├── QfiChart.tsx          # TRACE折れ線グラフ
 │   ├── InputForm.tsx         # データ入力フォーム
 │   ├── DataTable.tsx         # データ一覧テーブル
 │   ├── SettingsDialog.tsx    # 設定ダイアログ
@@ -85,7 +85,7 @@ src/
     └── utils.ts              # ユーティリティ
 ```
 
-## 🧮 QFI計算ロジック
+## 🧮 TRACE計算ロジック
 
 ### 1. 正規化
 
@@ -103,12 +103,12 @@ z_time = (time - μ_time) / σ_time
 Ed = α × z_time
 ```
 
-### 3. 累積スコア（QFI）
+### 3. 累積スコア（TRACE）
 
 指数減衰を適用した累積：
 
 ```
-QFI[t] = Ed[t] + QFI[t-1] × exp(-λ)
+TRACE[t] = Ed[t] + TRACE[t-1] × exp(-λ)
 λ = ln(2) / halfLifeDays
 ```
 
