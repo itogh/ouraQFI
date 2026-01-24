@@ -41,7 +41,7 @@ export function SettingsDialog() {
     return () => window.removeEventListener("open-settings-api", onOpen as EventListener);
   }, []);
 
-  // Auto-generator for demo: 2分毎にデータを追加。初期スコアは -100 (表示)
+  // Auto-generator for demo: 2分毎にデータを追加。初期スコアは -50 (表示)
   const [autoRunning, setAutoRunning] = useState(false);
   const autoRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -52,8 +52,8 @@ export function SettingsDialog() {
     // reset store to start fresh series
     reset();
 
-  // compute initial target TRACE: -100 display => latestQfi = -ranks.A
-    const targetQfi = -(ranks.A ?? 9);
+  // compute initial target TRACE: -50 display => latestQfi = -(ranks.A * 0.5)
+    const targetQfi = -( (ranks.A ?? 9) * 0.5 );
 
   // first item: prevQfi = 0, decayFactor = 0 => ed = targetQfi
     const edValue = targetQfi;
@@ -166,7 +166,7 @@ export function SettingsDialog() {
             >
               {autoRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
-            <span className="text-sm text-muted-foreground">2分ごとに TRACE を自動更新（初期値 -100）</span>
+            <span className="text-sm text-muted-foreground">2分ごとに TRACE を自動更新（初期値 -50）</span>
           </div>
             <div className="pt-2">
             <h4 className="font-medium text-sm">API 入力</h4>
