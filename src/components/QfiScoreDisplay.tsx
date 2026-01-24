@@ -104,9 +104,6 @@ export function QfiScoreDisplay() {
             getScoreColor(displayScore)
           )}>
             {displayScore}
-            {isOverflow && (
-              <span className="ml-2 text-sm align-baseline text-muted-foreground">{rawNormalized > 0 ? "+" : ""} (raw: {latestQfi.toFixed(2)})</span>
-            )}
           </div>
           
           {/* 変化量の表示 */}
