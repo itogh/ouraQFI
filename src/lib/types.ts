@@ -11,6 +11,8 @@ export type DailyStats = {
   moneyJpy: number;
   emotionZ: number;
   capturedAt?: string; // ISO timestamp when this record was captured
+  // ephemeral: true means this record is a transient measurement and should not trigger ED/QFI recompute
+  ephemeral?: boolean;
 };
 
 export type NormalizationParams = {

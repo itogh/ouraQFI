@@ -53,6 +53,7 @@ function startDebugInterval(get: () => AppState, set: (patch: Partial<AppState>)
         moneyJpy: Math.round(Math.random() * 1000),
         emotionZ: Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5)),
         capturedAt: now.toISOString(),
+        ephemeral: true,
       };
 
       // add
@@ -85,6 +86,8 @@ export type AppState = {
     ranks: RankBreakpoints;
   }>) => void;
   setLockDailyOncePerDay: (v: boolean) => void;
+  // generate sample days (past N days) and add to store (non-ephemeral)
+  generateSampleDays: (count?: number) => void;
   enableDebug: () => void;
   disableDebug: () => void;
   generateDebugOnce: () => void;
@@ -183,6 +186,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       capturedAt: (r as DailyStats).capturedAt ?? new Date().toISOString(),
     }));
     // Merge records by date. If lockDailyOncePerDay is true, do not overwrite existing same-day records.
+    // Only trigger recompute when at least one incoming record is non-ephemeral.
+    const needRecompute = withTs.some((r) => !(r as DailyStats).ephemeral);
     set((s) => {
       const existing = [...s.daily];
       for (const rec of withTs) {
@@ -200,7 +205,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       return { daily: existing };
     });
-    get().recompute();
+    if (needRecompute) get().recompute();
     // If debug mode is on, output recent state to help diagnose ED/QFI behavior
     const state = get();
     if (state.debugMode) {
@@ -266,9 +271,69 @@ export const useAppStore = create<AppState>((set, get) => ({
         moneyJpy: Math.round(Math.random() * 1000),
         emotionZ: Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5)),
         capturedAt: now.toISOString(),
+        ephemeral: true,
       };
 
       state.addDaily(rec);
+    } catch (e) {
+      // ignore
+    }
+  },
+
+  generateSampleDays: (count = 20) => {
+    const state = get();
+    try {
+      const norm = state.norm;
+      const weights = state.weights;
+      const alpha = weights.alpha || 1;
+      const beta = weights.beta || 0;
+      const gamma = weights.gamma || 0;
+      const sigmaTime = norm.sigmaTime || 1;
+      const muTime = norm.muTime || 0;
+      const muMoney = norm.muMoney ?? 0;
+      const sigmaMoney = norm.sigmaMoney || 1;
+
+      // build ED series with adjacent diffs within ±3
+      const eds: number[] = [];
+      eds[0] = -5 + Math.random() * 10;
+      for (let i = 1; i < count; i++) {
+        const delta = (Math.random() * 6) - 3; // -3..+3
+        eds[i] = eds[i - 1] + delta;
+      }
+
+      // construct daily records from oldest to newest
+      const recs: DailyStats[] = [];
+      const base = new Date();
+      base.setHours(0, 0, 0, 0);
+      base.setDate(base.getDate() - (count - 1));
+
+      for (let i = 0; i < count; i++) {
+        const d = new Date(base);
+        d.setDate(base.getDate() + i);
+        const dateStr = d.toISOString().split("T")[0];
+
+        const ed = eds[i];
+        const moneyJpy = Math.round(Math.random() * 1000);
+        const emotionZ = Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5));
+
+        const zMoney = sigmaMoney > 0 ? (moneyJpy - muMoney) / sigmaMoney : 0;
+        const zEmotion = emotionZ;
+
+        let timeMinutes = ((ed - (beta * zMoney) - (gamma * zEmotion)) / alpha) * sigmaTime + muTime;
+        if (!Number.isFinite(timeMinutes)) timeMinutes = muTime;
+        if (timeMinutes < 1) timeMinutes = 1;
+        timeMinutes = Math.min(24 * 60, timeMinutes);
+
+        recs.push({
+          date: dateStr,
+          timeMinutes: Math.round(timeMinutes),
+          moneyJpy,
+          emotionZ,
+          capturedAt: new Date(d).toISOString(),
+        });
+      }
+
+      state.addDaily(recs);
     } catch (e) {
       // ignore
     }

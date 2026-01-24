@@ -21,6 +21,7 @@ export function SettingsDialog() {
   const { norm, weights, decay, ranks, setParams } = useAppStore();
   const lockDailyOncePerDay = useAppStore((s) => s.lockDailyOncePerDay);
   const setLockDailyOncePerDay = useAppStore((s) => s.setLockDailyOncePerDay);
+  const generateSampleDays = useAppStore((s) => s.generateSampleDays);
   const reset = useAppStore((s) => s.reset);
   const addDaily = useAppStore((s) => s.addDaily);
   const [isOpen, setIsOpen] = useState(false);
@@ -166,6 +167,7 @@ export function SettingsDialog() {
               />
               <span className="text-sm">同日の上書きを禁止（1日1件を固定）</span>
             </label>
+            <Button onClick={() => generateSampleDays(20)} variant="outline" size="sm">過去20日分生成</Button>
           </div>
             <div className="pt-2">
             <h4 className="font-medium text-sm">API 入力</h4>
