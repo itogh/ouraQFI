@@ -103,6 +103,55 @@ const defaultRanks: RankBreakpoints = {
   D: 3,
 };
 
+// Sanitize/normalize parameters loaded from persistence or user input.
+// This prevents degenerate values (zero/very-small sigma, zero A-rank, etc.)
+function sanitizeParams(input?: Partial<{
+  norm: NormalizationParams;
+  weights: WeightParams;
+  decay: DecayParams;
+  ranks: RankBreakpoints;
+}>) {
+  // merge with defaults
+  const norm: NormalizationParams = {
+    muTime: input?.norm?.muTime ?? defaultNorm.muTime,
+    sigmaTime: input?.norm?.sigmaTime ?? defaultNorm.sigmaTime,
+    muMoney: input?.norm?.muMoney ?? defaultNorm.muMoney,
+    sigmaMoney: input?.norm?.sigmaMoney ?? defaultNorm.sigmaMoney,
+  };
+  // enforce reasonable minima to avoid huge z-scores / divide-by-small
+  norm.sigmaTime = Math.max(1, Number(norm.sigmaTime) || 1);
+  norm.sigmaMoney = Math.max(1, Number(norm.sigmaMoney) || 1);
+
+  const weights: WeightParams = {
+    alpha: input?.weights?.alpha ?? defaultWeights.alpha,
+    beta: input?.weights?.beta ?? defaultWeights.beta,
+    gamma: input?.weights?.gamma ?? defaultWeights.gamma,
+  };
+  weights.alpha = Math.max(0.01, Number(weights.alpha) || 0.01);
+  weights.beta = Math.max(0.0, Number(weights.beta) || 0.0);
+  weights.gamma = Math.max(0.0, Number(weights.gamma) || 0.0);
+
+  const decay: DecayParams = {
+    halfLifeDays: input?.decay?.halfLifeDays ?? defaultDecay.halfLifeDays,
+  };
+  decay.halfLifeDays = Math.max(1, Number(decay.halfLifeDays) || 1);
+
+  const ranks: RankBreakpoints = {
+    A: input?.ranks?.A ?? defaultRanks.A,
+    B: input?.ranks?.B ?? defaultRanks.B,
+    C: input?.ranks?.C ?? defaultRanks.C,
+    D: input?.ranks?.D ?? defaultRanks.D,
+  };
+  // Aは最低1以上にする（0だと表示で -Infinity になり得る）
+  ranks.A = Math.max(1, Number(ranks.A) || 1);
+  // 他は A より小さくすることもあるが負やNaNは避ける
+  ranks.B = Math.max(0, Number(ranks.B) || 0);
+  ranks.C = Math.max(0, Number(ranks.C) || 0);
+  ranks.D = Math.max(0, Number(ranks.D) || 0);
+
+  return { norm, weights, decay, ranks };
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   norm: defaultNorm,
   weights: defaultWeights,
@@ -188,7 +237,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   reset: () => set({ daily: [], eds: [], qfi: [], latestRank: undefined }),
 
   setParams: (p) => {
-    set(p);
+    // sanitize incoming partial params and apply
+    const sanitized = sanitizeParams(p);
+    set(sanitized);
     get().recompute();
   },
 }));
@@ -217,11 +268,13 @@ if (typeof window !== "undefined") {
         };
         const obj = parsed as Persisted;
         const { daily, norm, weights, decay, ranks } = obj;
+        // sanitize persisted params before applying
+        const sanitized = sanitizeParams({ norm, weights, decay, ranks });
         useAppStore.setState({
-          ...(norm ? { norm } : {}),
-          ...(weights ? { weights } : {}),
-          ...(decay ? { decay } : {}),
-          ...(ranks ? { ranks } : {}),
+          norm: sanitized.norm,
+          weights: sanitized.weights,
+          decay: sanitized.decay,
+          ranks: sanitized.ranks,
           ...(daily ? { daily } : {}),
         });
         // Recompute derived values after hydration

@@ -71,8 +71,11 @@ export function computeQfiSeries(eds: ScoreEd[], decay: DecayParams): ScoreQfiPo
     const decayFactor = i === 0 ? 0 : Math.exp(-lambda);
     const current = ed.ed + prevQfi * decayFactor;
     const delta = i === 0 ? 0 : current - prevQfi;
-    qfi.push({ date: ed.date, qfi: current, delta });
-    prevQfi = current;
+    // 防御: 異常に大きな値が現れた場合はクリップする
+    const CLAMP_QFI = 1000;
+    const clipped = Math.max(-CLAMP_QFI, Math.min(CLAMP_QFI, current));
+    qfi.push({ date: ed.date, qfi: clipped, delta: i === 0 ? 0 : clipped - prevQfi });
+    prevQfi = clipped;
   }
   return qfi;
 }

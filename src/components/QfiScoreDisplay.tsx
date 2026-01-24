@@ -16,10 +16,21 @@ export function QfiScoreDisplay() {
   
   // TRACEを-100〜100にスケーリング
   // 0を中心に、Aランク閾値を100、-Aランク閾値を-100とする
-  const maxScore = ranks.A; // Aランクの閾値を100として扱う
-  
+  // 防御: ranks.A が 0 や異常値だと除算で -Infinity/Infinity になり得るため
+  // 妥当なフォールバックを使う。
+  const rawMax = ranks?.A ?? 9;
+  const maxScore = rawMax > 0 ? rawMax : 9;
+  if (rawMax <= 0) {
+    // レンダリング中の副作用は最小限に留めつつ、開発時に原因が追えるようログ出力
+    // 実際の運用では不要であれば削除してください。
+    // eslint-disable-next-line no-console
+    console.warn("QfiScoreDisplay: invalid ranks.A detected, falling back to", maxScore);
+  }
+
   // 0を中心に正負両方向にスケーリング
-  const normalizedScore = Math.min(100, Math.max(-100, (latestQfi / maxScore) * 100));
+  const normalizedScore = Number.isFinite(latestQfi)
+    ? Math.min(100, Math.max(-100, (latestQfi / maxScore) * 100))
+    : 0;
   const displayScore = Math.round(normalizedScore);
   
   // 前回のスコアも計算
