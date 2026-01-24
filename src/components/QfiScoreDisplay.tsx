@@ -28,10 +28,23 @@ export function QfiScoreDisplay() {
   }
 
   // 0を中心に正負両方向にスケーリング
-  const normalizedScore = Number.isFinite(latestQfi)
-    ? Math.min(100, Math.max(-100, (latestQfi / maxScore) * 100))
-    : 0;
-  const displayScore = Math.round(normalizedScore);
+  const rawNormalized = Number.isFinite(latestQfi) ? (latestQfi / maxScore) * 100 : 0;
+  const isOverflow = Math.abs(rawNormalized) > 100;
+
+  // 表示値：±100にマッピングするが、±100に近づくほど反比例的に上がりづらくする
+  // 具体的には f(x) = sign(x) * 100 * (|x| / (|x| + k)) を使う。
+  // k は「曲率」係数で、小さいほど早く飽和し、大きいほど線形領域が広がる。
+  const compressInverse = (val: number, k = 50) => {
+    const sign = val >= 0 ? 1 : -1;
+    const abs = Math.abs(val);
+    // 小さな値はほぼ線形（abs/(abs+k) ≈ abs/k）、大きな値は 100 に漸近
+    const scaled = (abs / (abs + k)) * 100;
+    return sign * scaled;
+  };
+
+  // 圧縮済みスコア（-100..100 に漸近）を UI に使用する
+  const compressedNormalized = Number.isFinite(rawNormalized) ? compressInverse(rawNormalized, 50) : 0;
+  const displayScore = Math.round(Math.max(-100, Math.min(100, compressedNormalized)));
   
   // 前回のスコアも計算
   const prevNormalizedScore = previousQfi !== null 
@@ -91,6 +104,9 @@ export function QfiScoreDisplay() {
             getScoreColor(displayScore)
           )}>
             {displayScore}
+            {isOverflow && (
+              <span className="ml-2 text-sm align-baseline text-muted-foreground">{rawNormalized > 0 ? "+" : ""} (raw: {latestQfi.toFixed(2)})</span>
+            )}
           </div>
           
           {/* 変化量の表示 */}
