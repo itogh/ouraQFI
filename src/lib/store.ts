@@ -73,6 +73,8 @@ export type AppState = {
   qfi: ScoreQfiPoint[];
   latestRank?: Rank;
   debugMode: boolean;
+  // when true, the first record for a given date is kept and subsequent same-day writes are ignored
+  lockDailyOncePerDay: boolean;
   addDaily: (input: DailyStats | DailyStats[]) => void;
   recompute: () => void;
   reset: () => void;
@@ -82,6 +84,7 @@ export type AppState = {
     decay: DecayParams;
     ranks: RankBreakpoints;
   }>) => void;
+  setLockDailyOncePerDay: (v: boolean) => void;
   enableDebug: () => void;
   disableDebug: () => void;
   generateDebugOnce: () => void;
@@ -170,6 +173,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   qfi: [],
   latestRank: undefined,
   debugMode: false,
+  lockDailyOncePerDay: false,
 
   addDaily: (input) => {
     const arr = Array.isArray(input) ? input : [input];
@@ -178,13 +182,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       ...r,
       capturedAt: (r as DailyStats).capturedAt ?? new Date().toISOString(),
     }));
-    // Merge records by date: if a record for the same date exists, replace it.
+    // Merge records by date. If lockDailyOncePerDay is true, do not overwrite existing same-day records.
     set((s) => {
       const existing = [...s.daily];
       for (const rec of withTs) {
         const idx = existing.findIndex((d) => d.date === rec.date);
         if (idx >= 0) {
-          existing[idx] = { ...existing[idx], ...rec };
+          if (s.lockDailyOncePerDay) {
+            // skip overwrite
+            continue;
+          } else {
+            existing[idx] = { ...existing[idx], ...rec };
+          }
         } else {
           existing.push(rec);
         }
@@ -283,6 +292,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set(sanitized);
     get().recompute();
   },
+  setLockDailyOncePerDay: (v: boolean) => set({ lockDailyOncePerDay: v }),
 }));
 
 // Persist to localStorage in the browser so data survives reloads.

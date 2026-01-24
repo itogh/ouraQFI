@@ -14,6 +14,7 @@ export function AutoDataGenerator() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const { addDaily } = useAppStore();
+  const generateDebugOnce = useAppStore((s) => s.generateDebugOnce);
 
   // 20日分の仮データを一括生成する（連続する ED の差分を ±3 に抑える）
   const generate20Days = () => {
@@ -210,6 +211,9 @@ export function AutoDataGenerator() {
           )}
           <Button onClick={generate20Days} variant="outline" className="gap-2">
             20日分生成
+          </Button>
+          <Button onClick={() => generateDebugOnce()} variant="secondary" className="gap-2">
+            1件生成
           </Button>
           
           {isRunning && (

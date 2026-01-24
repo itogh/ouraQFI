@@ -19,6 +19,8 @@ import type { AppState } from "@/lib/store";
 
 export function SettingsDialog() {
   const { norm, weights, decay, ranks, setParams } = useAppStore();
+  const lockDailyOncePerDay = useAppStore((s) => s.lockDailyOncePerDay);
+  const setLockDailyOncePerDay = useAppStore((s) => s.setLockDailyOncePerDay);
   const reset = useAppStore((s) => s.reset);
   const addDaily = useAppStore((s) => s.addDaily);
   const [isOpen, setIsOpen] = useState(false);
@@ -154,6 +156,16 @@ export function SettingsDialog() {
               {autoRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
             <span className="text-sm text-muted-foreground">1日ごとに TRACE を自動更新（初期値はランダム）</span>
+          </div>
+          <div className="pt-2 flex items-center gap-2">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={lockDailyOncePerDay}
+                onChange={(e) => setLockDailyOncePerDay(e.target.checked)}
+              />
+              <span className="text-sm">同日の上書きを禁止（1日1件を固定）</span>
+            </label>
           </div>
             <div className="pt-2">
             <h4 className="font-medium text-sm">API 入力</h4>
