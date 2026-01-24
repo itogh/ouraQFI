@@ -14,7 +14,7 @@ function stopDebugInterval() {
 
 function startDebugInterval(get: () => AppState, set: (patch: Partial<AppState>) => void) {
   stopDebugInterval();
-  // every 2 minutes (reflect frequent updates immediately into cumulative scores)
+  // every 3 minutes
   __debugInterval = setInterval(() => {
     try {
       const state = get();
@@ -53,8 +53,7 @@ function startDebugInterval(get: () => AppState, set: (patch: Partial<AppState>)
         moneyJpy: Math.round(Math.random() * 1000),
         emotionZ: Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5)),
         capturedAt: now.toISOString(),
-        // mark as non-ephemeral so these frequent measurements are included in recompute
-        ephemeral: false,
+        ephemeral: true,
       };
 
       // add
@@ -272,8 +271,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         moneyJpy: Math.round(Math.random() * 1000),
         emotionZ: Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5)),
         capturedAt: now.toISOString(),
-        // include this in cumulative calculations
-        ephemeral: false,
+        ephemeral: true,
       };
 
       state.addDaily(rec);
@@ -343,7 +341,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   recompute: () => {
     const { daily, norm, weights, decay, ranks } = get();
-    const sorted = [...daily].sort((a, b) => a.date.localeCompare(b.date));
+    // Exclude ephemeral (transient) measurements from derived calculations.
+    // Ephemeral entries are intended for short-term display only and should
+    // not affect ED/QFI or persist across reloads.
+    const sorted = [...daily].filter((d) => !d.ephemeral).sort((a, b) => a.date.localeCompare(b.date));
     const eds = computeEd(sorted, { norm, weights });
     const qfi = computeQfiSeries(eds, decay);
     const latest = qfi.at(-1)?.qfi ?? 0;
@@ -388,12 +389,14 @@ if (typeof window !== "undefined") {
         const { daily, norm, weights, decay, ranks } = obj;
         // sanitize persisted params before applying
         const sanitized = sanitizeParams({ norm, weights, decay, ranks });
+        // Ensure any persisted ephemeral items (older persisted data) are not rehydrated
+        const persistedDaily = Array.isArray(daily) ? (daily as DailyStats[]).filter((d) => !d.ephemeral) : undefined;
         useAppStore.setState({
           norm: sanitized.norm,
           weights: sanitized.weights,
           decay: sanitized.decay,
           ranks: sanitized.ranks,
-          ...(daily ? { daily } : {}),
+          ...(persistedDaily ? { daily: persistedDaily } : {}),
         });
         // Recompute derived values after hydration
         useAppStore.getState().recompute();
@@ -406,8 +409,10 @@ if (typeof window !== "undefined") {
   // Subscribe and save on changes (debounce not necessary for small state)
   useAppStore.subscribe((s) => {
     try {
+      // Persist only non-ephemeral daily records so transient debug data
+      // is not stored and won't be rehydrated on reload.
       const toSave = {
-        daily: s.daily,
+        daily: (s.daily || []).filter((d) => !d.ephemeral),
         norm: s.norm,
         weights: s.weights,
         decay: s.decay,
