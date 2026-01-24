@@ -25,16 +25,24 @@ function startDebugInterval(get: () => AppState, set: (patch: Partial<AppState>)
       const delta = (Math.random() * 16) - 8; // -8..+8
       const targetEd = lastEd + delta;
 
-      // compute required timeMinutes to realize targetEd assuming money/emotion=0
-      const { norm, weights } = state;
-      const alpha = weights.alpha || 1;
-      const sigmaTime = norm.sigmaTime || 1;
-      const muTime = norm.muTime || 0;
+      // より実運用らしいランダム性を与える: 前回の timeMinutes を中心にノイズを付与
+      const prevDaily = state.daily ?? [];
+      const lastTime = prevDaily.length ? prevDaily[prevDaily.length - 1].timeMinutes : null;
 
-      // ed = alpha * (time - mu) / sigma  => time = (ed/alpha)*sigma + mu
-      let timeMinutes = (targetEd / alpha) * sigmaTime + muTime;
-      if (!Number.isFinite(timeMinutes)) timeMinutes = muTime;
-      if (timeMinutes < 0) timeMinutes = 0;
+      let timeMinutes: number;
+      if (lastTime === null) {
+        timeMinutes = Math.round(30 + Math.random() * 150); // 30..180
+      } else {
+        const rand = () => {
+          let sum = 0;
+          for (let i = 0; i < 6; i++) sum += (Math.random() - 0.5);
+          return sum;
+        };
+        const sd = 20;
+        const deltaTime = Math.round(rand() * sd);
+        timeMinutes = Math.max(1, lastTime + deltaTime);
+        timeMinutes = Math.min(24 * 60, timeMinutes);
+      }
 
       const now = new Date();
       const dateStr = now.toISOString().split("T")[0];
@@ -42,8 +50,8 @@ function startDebugInterval(get: () => AppState, set: (patch: Partial<AppState>)
       const rec: DailyStats = {
         date: dateStr,
         timeMinutes: Math.round(timeMinutes),
-        moneyJpy: 0,
-        emotionZ: 0,
+        moneyJpy: Math.round(Math.random() * 1000),
+        emotionZ: Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5)),
         capturedAt: now.toISOString(),
       };
 
@@ -192,20 +200,24 @@ export const useAppStore = create<AppState>((set, get) => ({
     // replicate the same logic as in the interval
     const state = get();
     try {
-      const prevEds: ScoreEd[] = state.eds;
-      const lastEd = prevEds.length ? prevEds[prevEds.length - 1].ed : 0;
+      // use same realistic generator as the debug interval: randomize timeMinutes around previous value
+      const prevDaily = state.daily ?? [];
+      const lastTime = prevDaily.length ? prevDaily[prevDaily.length - 1].timeMinutes : null;
 
-      const delta = (Math.random() * 16) - 8;
-      const targetEd = lastEd + delta;
-
-      const { norm, weights } = state;
-      const alpha = weights.alpha || 1;
-      const sigmaTime = norm.sigmaTime || 1;
-      const muTime = norm.muTime || 0;
-
-      let timeMinutes = (targetEd / alpha) * sigmaTime + muTime;
-      if (!Number.isFinite(timeMinutes)) timeMinutes = muTime;
-      if (timeMinutes < 0) timeMinutes = 0;
+      let timeMinutes: number;
+      if (lastTime === null) {
+        timeMinutes = Math.round(30 + Math.random() * 150);
+      } else {
+        const rand = () => {
+          let sum = 0;
+          for (let i = 0; i < 6; i++) sum += (Math.random() - 0.5);
+          return sum;
+        };
+        const sd = 20;
+        const deltaTime = Math.round(rand() * sd);
+        timeMinutes = Math.max(1, lastTime + deltaTime);
+        timeMinutes = Math.min(24 * 60, timeMinutes);
+      }
 
       const now = new Date();
       const dateStr = now.toISOString().split("T")[0];
@@ -213,8 +225,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       const rec: DailyStats = {
         date: dateStr,
         timeMinutes: Math.round(timeMinutes),
-        moneyJpy: 0,
-        emotionZ: 0,
+        moneyJpy: Math.round(Math.random() * 1000),
+        emotionZ: Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5)),
         capturedAt: now.toISOString(),
       };
 

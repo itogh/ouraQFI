@@ -19,34 +19,46 @@ export function AutoDataGenerator() {
     const now = new Date();
     const dateStr = now.toISOString().split("T")[0];
 
-  // 前回の ed を取得
-  // useAppStore exposes getState(); cast to unknown then to a typed shape to avoid `any` lint errors
-  const hasGetState = typeof (useAppStore as unknown as { getState?: unknown }).getState === "function";
-  const state: AppState | null = hasGetState
-    ? (useAppStore as unknown as { getState: () => AppState }).getState()
-    : null;
-  const prevEds = state?.eds ?? [];
-    const lastEd = prevEds.length ? prevEds[prevEds.length - 1].ed : 0;
+    // 前回の記録を参照して、そこからほどよく揺らぐ時間（分）を生成する。
+    // 初回は実運用に近い 30〜180 分の一様分布でサンプリング。
+    const hasGetState = typeof (useAppStore as unknown as { getState?: unknown }).getState === "function";
+    const state: AppState | null = hasGetState
+      ? (useAppStore as unknown as { getState: () => AppState }).getState()
+      : null;
 
-    // delta を -5..+5 にする
-    const delta = (Math.random() * 10) - 5;
-    const targetEd = lastEd + delta;
+    // 前回の timeMinutes を取得できればそれを中心にノイズを付与する
+    const prevDaily = state?.daily ?? [];
+    const lastTime = prevDaily.length ? prevDaily[prevDaily.length - 1].timeMinutes : null;
 
-    // store と同じ正規化パラメータを使って timeMinutes を逆算
-    const { norm = { muTime: 60, sigmaTime: 20 }, weights = { alpha: 1 } } = state ?? {};
-    const alpha = weights.alpha || 1;
-    const sigmaTime = norm.sigmaTime || 1;
-    const muTime = norm.muTime || 0;
+    let timeMinutes: number;
+    if (lastTime === null) {
+      // 初回は 30..180 分 (実運用を想定したレンジ)
+      timeMinutes = Math.round(30 + Math.random() * 150);
+    } else {
+      // 前回からの変化を正規分布っぽく（中心0、標準偏差 20 分）で生成し、極端なジャンプを抑える
+      const rand = () => {
+        // 箱ひげ法による簡易正規近似: sum of 6 uniforms -> approx normal
+        let sum = 0;
+        for (let i = 0; i < 6; i++) sum += (Math.random() - 0.5);
+        return sum; // mean 0, approx std ~1
+      };
+      const sd = 20; // 1シグマ = 20分
+      const delta = Math.round(rand() * sd);
+      timeMinutes = Math.max(1, lastTime + delta);
+      // clamp to a realistic window
+      timeMinutes = Math.min(24 * 60, timeMinutes);
+    }
 
-    let timeMinutes = (targetEd / alpha) * sigmaTime + muTime;
-    if (!Number.isFinite(timeMinutes)) timeMinutes = muTime;
-    if (timeMinutes < 0) timeMinutes = 0;
+    // 追加の雑音: 金銭・感情スコアも少しランダムにする（実運用っぽく）
+    const moneyJpy = Math.round(Math.random() * 1000); // 0..1000 JPY
+    // emotionZ はセンサZスコアで、通常は -3..+3 程度。小さな変動を追加。
+    const emotionZ = Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5));
 
     return {
       date: dateStr,
       timeMinutes: Math.round(timeMinutes),
-      moneyJpy: 0,
-      emotionZ: 0,
+      moneyJpy,
+      emotionZ,
     };
   };
 
