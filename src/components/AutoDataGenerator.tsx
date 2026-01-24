@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAppStore } from "@/lib/store";
 import type { AppState } from "@/lib/store";
+import type { DailyStats } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Play, Pause, RotateCcw } from "lucide-react";
@@ -13,6 +14,61 @@ export function AutoDataGenerator() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const { addDaily } = useAppStore();
+
+  // 20日分の仮データを一括生成する（連続する ED の差分を ±3 に抑える）
+  const generate20Days = () => {
+    const DAYS = 20;
+    const hasGetState = typeof (useAppStore as unknown as { getState?: unknown }).getState === "function";
+    const state: AppState | null = hasGetState
+      ? (useAppStore as unknown as { getState: () => AppState }).getState()
+      : null;
+
+    const norm = state?.norm ?? { muTime: 60, sigmaTime: 20 };
+    const weights = state?.weights ?? { alpha: 1 };
+    const alpha = weights.alpha || 1;
+    const sigmaTime = norm.sigmaTime || 1;
+    const muTime = norm.muTime || 0;
+
+    // 初期 ED を -5..5 の範囲でランダムに採る
+    const eds: number[] = [];
+    eds[0] = -5 + Math.random() * 10;
+    for (let i = 1; i < DAYS; i++) {
+      // 前日との差分を -3..+3 に抑える
+      const delta = (Math.random() * 6) - 3; // -3..+3
+      eds[i] = eds[i - 1] + delta;
+    }
+
+    // 日付は古い順（DAYS-1 日前 から 今日 まで）
+  const recs: DailyStats[] = [];
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    base.setDate(base.getDate() - (DAYS - 1));
+    for (let i = 0; i < DAYS; i++) {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
+      const dateStr = d.toISOString().split("T")[0];
+
+      // ED を timeMinutes に逆算（money/emotion を 0 と仮定）
+      const ed = eds[i];
+      let timeMinutes = (ed / alpha) * sigmaTime + muTime;
+      if (!Number.isFinite(timeMinutes)) timeMinutes = muTime;
+      if (timeMinutes < 1) timeMinutes = 1;
+      timeMinutes = Math.min(24 * 60, timeMinutes);
+
+      const moneyJpy = Math.round(Math.random() * 1000);
+      const emotionZ = Math.max(-3, Math.min(3, (Math.random() * 2 - 1) * 1.5));
+
+      recs.push({
+        date: dateStr,
+        timeMinutes: Math.round(timeMinutes),
+        moneyJpy,
+        emotionZ,
+        capturedAt: new Date(d).toISOString(),
+      });
+    }
+
+    addDaily(recs);
+  };
 
   // 前回の Ed を使って、3分ごとに前回値に対して ±5 の範囲で更新するデータを生成
   const generateBasedOnPrev = () => {
@@ -141,6 +197,9 @@ export function AutoDataGenerator() {
               停止
             </Button>
           )}
+          <Button onClick={generate20Days} variant="outline" className="gap-2">
+            20日分生成
+          </Button>
           
           {isRunning && (
             <Button onClick={resetAndStart} variant="outline" className="gap-2">
