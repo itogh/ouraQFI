@@ -157,9 +157,6 @@ UI仕様書は [UI_SPECIFICATION.md](./UI_SPECIFICATION.md) を参照してく�
 ## 📄 ライセンス
 
 このプロジェクトはMITライセンスの下で公開されています。
-
-## 🙏 謝辞
-
 このプロジェクトは以下のオープンソースプロジェクトを使用しています：
 
 - [Next.js](https://nextjs.org/)

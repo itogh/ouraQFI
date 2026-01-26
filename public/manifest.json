@@ -9,13 +9,13 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/image-copy.png",
+      "src": "/TRACE.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/image-copy.png",
+      "src": "/TRACE.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
