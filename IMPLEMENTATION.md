@@ -62,7 +62,7 @@ src/
 │   └── ThemeToggle.tsx       # ダークモード切替
 └── lib/
     ├── types.ts              # 型定義
-  ├── qfi.ts                # TRACE計算ロジック (内部ファイル名は変更していません)
+    ├── qfi.ts                # TRACE計算ロジック (内部ファイル名は変更していません)
     ├── store.ts              # Zustand ストア
     ├── mockApi.ts            # モックAPI
     ├── config.ts             # 設定
