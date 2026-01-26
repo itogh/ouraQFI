@@ -217,3 +217,16 @@ UI仕様書は [UI_SPECIFICATION.md](./UI_SPECIFICATION.md) を参照してく�
 　波羅僧揭諦　菩提薩婆呵
 　般若心経
 **
+
+## 変更履歴
+
+- 2026-01-26 — アプリアイコンを更新
+  - 概要: アプリのアイコン参照を `public/TRACE.png` に変更しました。
+  - 影響ファイル: `public/manifest.json`, `src/app/layout.tsx`
+  - 備考: 必要に応じて高解像度のアイコンを生成するにはプロジェクトルートで次を実行してください。
+
+    ```bash
+    ./scripts/set-icons.sh TRACE.png
+    ```
+
+    生成後は `manifest.json` に `icon-192.png` / `icon-512.png` を指定することを推奨します。
