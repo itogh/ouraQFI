@@ -9,8 +9,14 @@ import kotlinx.coroutines.flow.flow
 
 object DndUtils {
     fun isNotificationPolicyAccessGranted(context: Context): Boolean {
-        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        return nm.isNotificationPolicyAccessGranted
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            ?: return false
+        return try {
+            nm.isNotificationPolicyAccessGranted
+        } catch (e: Exception) {
+            false
+        }
     }
 
     // simple reactive wrapper (not hot); caller can collect when needed

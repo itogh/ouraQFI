@@ -1,23 +1,19 @@
 package com.example.focusdnd
 
 import android.app.NotificationManager
-import android.content.Context
 import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.provider.Settings
-import android.content.Context
 import android.util.Log
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.system.measureTimeMillis
 
 private const val TAG = "FocusDnd"
 
@@ -77,7 +73,8 @@ class FocusDndController(
     private suspend fun applyDndOnIfAllowed() {
         mutex.withLock {
             Log.d(TAG, "applyDndOnIfAllowed: checking permission and current state")
-            if (!settingsRepository.focusDndEnabledFlow.value) {
+            // check feature flag via suspend getter
+            if (!settingsRepository.getFocusDndEnabled()) {
                 Log.d(TAG, "Skipping applyDndOn: feature disabled in settings")
                 return
             }
@@ -85,7 +82,7 @@ class FocusDndController(
                 Log.d(TAG, "Permission not granted: skipping DND apply (UI should show guidance)")
                 return
             }
-            val mode = settingsRepository.focusDndModeFlow.value
+            val mode = settingsRepository.getFocusDndMode()
             val targetFilter = when (mode) {
                 SettingsRepository.Mode.PRIORITY -> NotificationManager.INTERRUPTION_FILTER_PRIORITY
                 SettingsRepository.Mode.NONE -> NotificationManager.INTERRUPTION_FILTER_NONE
@@ -105,9 +102,17 @@ class FocusDndController(
                 Log.d(TAG, "Saved previous filter=$current")
             }
 
-            // Apply
+            // Apply (guard for API level)
             Log.d(TAG, "Setting interruptionFilter -> $targetFilter")
-            notificationManager.setInterruptionFilter(targetFilter)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                try {
+                    notificationManager.setInterruptionFilter(targetFilter)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to set interruption filter: ${e.message}")
+                }
+            } else {
+                Log.w(TAG, "setInterruptionFilter not supported on this API level; skipping")
+            }
             // Record that app set interruption filter now
             settingsRepository.setLastAppSetAtMs(System.currentTimeMillis())
             settingsRepository.setAppliedByApp(true)
@@ -127,12 +132,28 @@ class FocusDndController(
             val prev = settingsRepository.getFocusDndPrevFilter()
             if (prev != null) {
                 Log.d(TAG, "Restoring interruptionFilter -> $prev")
-                notificationManager.setInterruptionFilter(prev)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    try {
+                        notificationManager.setInterruptionFilter(prev)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to restore interruption filter: ${e.message}")
+                    }
+                } else {
+                    Log.w(TAG, "setInterruptionFilter not supported on this API level; skipping restore")
+                }
                 settingsRepository.setLastAppSetAtMs(System.currentTimeMillis())
             } else {
                 // Fallback: set to INTERRUPTION_FILTER_ALL
                 Log.d(TAG, "No previous filter stored; falling back to ALL")
-                notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    try {
+                        notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to set interruption filter ALL: ${e.message}")
+                    }
+                } else {
+                    Log.w(TAG, "setInterruptionFilter not supported on this API level; skipping fallback")
+                }
                 settingsRepository.setLastAppSetAtMs(System.currentTimeMillis())
             }
             settingsRepository.setAppliedByApp(false)
@@ -155,6 +176,11 @@ class FocusDndController(
      */
     fun startObserveDndChanges(ignoreWindowMs: Long = 1500L) {
         if (dndReceiver != null) return
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            Log.w(TAG, "Interruption filter change broadcasts not supported on this API level; not observing")
+            return
+        }
 
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: Context, intent: Intent) {
