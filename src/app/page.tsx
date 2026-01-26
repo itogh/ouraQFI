@@ -40,7 +40,7 @@ export default function Home() {
             <div className="flex items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold">TRACE</h1>
-                <p className="text-sm text-muted-foreground mt-1">日々の活動から熱中度を可視化するダッシュボード</p>
+                <p className="text-sm text-muted-foreground mt-1">日々の活動から集中度を可視化するダッシュボード</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -65,7 +65,7 @@ export default function Home() {
           <Card className="transition-shadow hover:shadow-lg rounded-xl border border-transparent bg-gradient-to-br from-white/50 to-slate-50 dark:from-gray-900 dark:to-gray-800">
             <CardHeader>
               <CardTitle>日次スコア（Ed）</CardTitle>
-              <CardDescription>時間を基にした日次評価</CardDescription>
+              <CardDescription>時間を基にした日次標準値</CardDescription>
             </CardHeader>
             <CardContent>
               <EdChart data={eds} />
@@ -104,8 +104,7 @@ export default function Home() {
             <CardContent className="py-12">
               <div className="text-center space-y-4">
                 <p className="text-muted-foreground">
-                  現在、記録がありません。画面右上の設定（歯車）を開いてデバッグモードを有効化するか、
-                  外部データを取り込んでください。
+                  現在、記録がありません。外部データを取り込んでください。
                 </p>
               </div>
             </CardContent>
